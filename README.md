@@ -65,3 +65,27 @@ Desarrollar una aplicación móvil integral que permita:
 - 📄 Extracción OCR desde documentos físicos
 
 - 📊 Generación automática de reportes detallados
+
+---
+
+# 📈 Visualización de Datos
+
+- Gráficos de barras.
+
+- Gráficos circulares.
+
+- Métricas mensuales.
+
+- Informes por categoría.
+
+# 👥 Equipo de Desarrollo
+
+- Diego Alejandro Unas
+- Juan Alejandro Jimenez
+- María Alejandra Bernal
+
+---
+
+# 📌 Estado del Proyecto
+
+🟡 En desarrollo
