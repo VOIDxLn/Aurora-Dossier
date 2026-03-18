@@ -1,10 +1,10 @@
 # 📱 Aurora Dossier
 
-Aplicación móvil inteligente para la gestión administrativa y operativa empresarial, potenciada con Inteligencia Artificial.
+> Aplicación móvil inteligente para la gestión administrativa y operativa empresarial, potenciada con Inteligencia Artificial.
 
 # 📌 Descripción del Proyecto
 
-Aurora Dossier es una aplicación móvil diseñada para optimizar la gestión de operaciones empresariales y personales mediante el uso de Inteligencia Artificial.
+> Aurora Dossier es una aplicación móvil diseñada para optimizar la gestión de operaciones empresariales y personales mediante el uso de Inteligencia Artificial.
 
 El sistema elimina la carga administrativa manual y mejora la toma de decisiones mediante:
 
@@ -32,7 +32,7 @@ Desarrollar una aplicación móvil integral que permita:
 
 - Mejorar la experiencia de usuario con diseño moderno y accesible.
 
----
+
 
 # 🧠 Módulos Principales
 🔹 Módulo Administrativo
@@ -66,7 +66,6 @@ Desarrollar una aplicación móvil integral que permita:
 
 - 📊 Generación automática de reportes detallados
 
----
 
 # 📈 Visualización de Datos
 
@@ -77,6 +76,8 @@ Desarrollar una aplicación móvil integral que permita:
 - Métricas mensuales.
 
 - Informes por categoría.
+
+---
 
 # 👥 Equipo de Desarrollo
 
