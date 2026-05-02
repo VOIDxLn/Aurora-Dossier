@@ -6,8 +6,8 @@ export default function Button(props) {
         style={({ pressed }) => (
             {
                 backgroundColor: pressed ? props.pressedButtonColor : props.buttonColor,
-                width: props.width,
                 padding: 12,
+                width: props.buttonWidth,
                 borderRadius: 8,
                 alignItems: "center",
                 marginTop: props.marginTop,

@@ -2,47 +2,38 @@ import { StatusBar } from 'expo-status-bar';
 import { Alert, Pressable, StyleSheet, Text, View, Image, TextInput, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
 
-import { supabase } from '../../lib/supabase';
-
 import Logo from '../../components/Logo';
 import Button from '../../components/Button';
 import Icons from '../../components/Icons';
 
 import TextInputs from './components/TextInputs';
 
+
+import { supabase } from '../../lib/supabase';
+
 export default function LoginScreen() {
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState();
+  const [password, setPassword] = useState();
 
+  async function handleLogin() {
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+      
+        if (error) {
+          Alert.alert("Correo o contraseña incorrectos");
+          return;
+        }
 
-  async function signInWithEmail() {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email, password
-    })
+        Alert.alert("Iniciando sesion...");
 
-    if (error) Alert.alert("Errror", error.message);
-    setLoading(false);
-  }
-
-  async function signUp() {
-    setLoading(true);
-
-    const {
-      data: { session },
-      error,
-
-    } = await supabase.auth.signUp({
-      email: email,
-      password: password
-    })
-
-    if (error) Alert.alert("Error", error.message);
-    if (!session) Alert.alert("por favor revisa tu correo para veridicar tu cuenta");
-    setLoading(false);
-  }
+      } catch(error) {
+        Alert.alert("Algo salio mal.");
+      }
+    }
 
   return (
     <View style={styles.container}>
@@ -51,17 +42,32 @@ export default function LoginScreen() {
 
       <Text style={{ fontSize: 32, fontWeight: "bold", color: "#2456ee", marginTop: 20, marginBottom: 50 }}>Iniciar Sesión</Text>
 
-      <TextInputs placeholder="Correo electronico" onChangeText={(text) => setEmail(text)} value={email} autoCapitalize="none" />
+      <TextInputs placeholder="Correo electronico" value={email} autoCapitalize="none" onChangeText={setEmail} />
 
-      <TextInputs placeholder="Contraseña" onChangeText={(text) => setPassword(text)}
-        value={password} autoCapitalize="none" />
+      <TextInputs security={true} placeholder="Contraseña"
+        value={password} autoCapitalize="none" onChangeText={setPassword} />
 
-      <Text style={[styles.link, { marginBottom: 30, width: "80%", textAlign: "right" }]}>Olvidaste tu contraseña?</Text>
+      <View style={{ width: "80%", alignItems: "flex-end" }}>
+        <Text style={[styles.link, { marginBottom: 25, alignItems: "flex-end" }]}>Olvidaste tu contraseña?</Text>
+      </View>
 
-      <TouchableOpacity onPress={() => signInWithEmail()} disabled={loading} >
-        <Button buttonText={loading ? "Ingresando..." : "Ingresar"} buttonStyle={{ color: "#f3f4f6", fontWeight: "bold", fontSize: 20, }}
-          pressedButtonColor="#6cb1ff" buttonColor="#2456ee" width="80%" marginTop={20} />
-      </TouchableOpacity>
+      <Pressable
+        onPress={handleLogin}
+        style={({ pressed }) => (
+          {
+            backgroundColor: pressed ? "#6cb1ff" : "#2456ee",
+            padding: 12,
+            width: "80%",
+            borderRadius: 8,
+            alignItems: "center",
+            marginTop: 10,
+          }
+        )}>
+        {({ pressed }) => (
+          <Text style={{ color: "#f3f4f6", fontWeight: "bold", fontSize: 20, }}>Ingresar</Text>
+        )}
+      </Pressable>
+
 
       <View style={{ flexDirection: "row", alignItems: "center", marginTop: 40, marginBottom: 50 }}>
         <Text style={styles.text}>No tienes cuenta?</Text>
