@@ -16,7 +16,8 @@ export default function SplashScreen({ navigation }) {
         }).start();
 
         setTimeout(() => {
-            navigation.replace('Login');
+            //navigation.replace('Login');
+            navigation.replace('CrearInforme');
         }, 2000);
     }, []);
 
