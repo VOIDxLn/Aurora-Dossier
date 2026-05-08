@@ -11,6 +11,9 @@ import {
   Platform,
 } from 'react-native';
 
+import Logo from '../../components/Logo';
+import TextInputs from '../auth/components/TextInputs';
+
 export default function RegisterEmpresaScreen({ navigation }) {
   // Estas variables guardan lo que el usuario escribe
   const [nit, setNit] = useState('');
@@ -18,46 +21,28 @@ export default function RegisterEmpresaScreen({ navigation }) {
   const [domicilio, setDomicilio] = useState('');
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
 
         {/* Logo */}
-        <Image
-          source={require('../../../assets/icon.png')}
-          style={styles.logo}
-        />
+        <Logo width={80} height={80} />
+        
 
         {/* Título */}
         <Text style={styles.titulo}>Crear cuenta</Text>
 
-        {/* Campo NIT */}
-        <TextInput
-          style={styles.input}
-          placeholder="NIT"
-          placeholderTextColor="#9CA3AF"
-          value={nit}
+        <TextInputs placeholder="Nit" autoCapitalize="none" value={nit}
           onChangeText={setNit}
-          keyboardType="numeric"
         />
 
         {/* Campo Razón Social */}
-        <TextInput
-          style={styles.input}
-          placeholder="Razón social"
-          placeholderTextColor="#9CA3AF"
-          value={razonSocial}
+        <TextInputs placeholder="Razon social" autoCapitalize="none" value={razonSocial}
           onChangeText={setRazonSocial}
         />
 
         {/* Campo Domicilio Fiscal */}
-        <TextInput
-          style={styles.input}
-          placeholder="Domicilio fiscal"
-          placeholderTextColor="#9CA3AF"
-          value={domicilio}
+        <TextInputs placeholder="Domicilio fiscal" autoCapitalize="none" value={domicilio}
           onChangeText={setDomicilio}
         />
 
@@ -76,53 +61,52 @@ export default function RegisterEmpresaScreen({ navigation }) {
           <Text style={styles.botonTexto}>Continuar</Text>
         </Pressable>
 
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
+          <Text style={styles.text}>Ya tienes cuenta?</Text>
+          <Text style={styles.link} onPress={() => navigation.goBack()}>Inicia sesión</Text>
+        </View>
+
       </ScrollView>
-    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 30,
-    paddingVertical: 40,
-  },
-  logo: {
-    width: 90,
-    height: 90,
-    marginBottom: 10,
+    marginBottom: 70
   },
   titulo: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#2456EE',
-    marginBottom: 40,
-  },
-  input: {
-    width: '100%',
-    height: 55,
-    borderColor: '#D1D5DB',
-    borderWidth: 1.5,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 16,
-    backgroundColor: '#FFFFFF',
-    fontSize: 16,
-    color: '#1A1A2E',
+    marginTop: 20,
+    marginBottom: 60,
   },
   boton: {
-    width: '100%',
+    width: '80%',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 80,
   },
   botonTexto: {
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 18,
   },
+  link: {
+    color: "#2456ee",
+    fontSize: 16,
+    fontWeight: "regular",
+    marginTop: 5,
+  },
+  text: {
+    color: "#5b5b5b",
+    fontSize: 16,
+    marginTop: 5,
+    paddingRight: 5,
+  }
 });

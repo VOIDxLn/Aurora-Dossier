@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { Alert, Pressable, StyleSheet, Text, View, Image, TextInput, TouchableOpacity } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View, ScrollView, Image, TextInput, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
 
 import Logo from '../../components/Logo';
@@ -11,7 +11,7 @@ import TextInputs from './components/TextInputs';
 
 import { supabase } from '../../lib/supabase';
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
 
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
@@ -28,7 +28,6 @@ export default function LoginScreen() {
           return;
         }
 
-        Alert.alert("Iniciando sesión...");
         navigation.navigate('CrearInforme');
 
       } catch(error) {
@@ -37,15 +36,18 @@ export default function LoginScreen() {
     }
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
 
       <Logo width={80} height={80} />
 
       <Text style={{ fontSize: 32, fontWeight: "bold", color: "#2456ee", marginTop: 20, marginBottom: 50 }}>Iniciar Sesión</Text>
 
-      <TextInputs placeholder="Correo electronico" value={email} autoCapitalize="none" onChangeText={setEmail} />
+      <TextInputs placeholder="Correo electronico" value={email} keyboardType="email-address"
+       autoCorrect={false} autoCapitalize="none" onChangeText={setEmail} />
 
-      <TextInputs security={true} placeholder="Contraseña"
+      <TextInputs security={true} placeholder="Contraseña" autoCorrect={false}
         value={password} autoCapitalize="none" onChangeText={setPassword} />
 
       <View style={{ width: "80%", alignItems: "flex-end" }}>
@@ -83,7 +85,7 @@ export default function LoginScreen() {
       </View>
 
       <StatusBar style="auto" />
-    </View>
+    </ScrollView>
   );
 }
 

@@ -13,6 +13,9 @@ import {
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
+import Logo from '../../components/Logo';
+import TextInputs from '../auth/components/TextInputs';
+
 export default function RegisterUsuarioScreen({ navigation, route }) {
   const { nit, razonSocial, domicilio } = route.params;
 
@@ -87,67 +90,61 @@ export default function RegisterUsuarioScreen({ navigation, route }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <ScrollView contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
     >
-      <ScrollView contentContainerStyle={styles.container}>
 
-        <Image
-          source={require('../../../assets/icon.png')}
-          style={styles.logo}
-        />
+      <Logo width={80} height={80} />
 
-        <Text style={styles.titulo}>Crear cuenta</Text>
+      <Text style={styles.titulo}>Crear cuenta</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Correo electrónico"
-          placeholderTextColor="#9CA3AF"
-          value={correo}
-          onChangeText={setCorreo}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+      <TextInputs
+        placeholder="Correo electrónico"
+        keyboardType="email-address"
+        value={correo}
+        onChangeText={setCorreo}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor="#9CA3AF"
-          value={contrasena}
-          onChangeText={setContrasena}
-          secureTextEntry={true}
-        />
+      <TextInputs
+        placeholder="Contraseña"
+        keyboardType="default"
+        value={contrasena}
+        onChangeText={setContrasena}
+        security={true}
+        autoCorrect={false}
+        autoCapitalize="none"
+      />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Confirmar contraseña"
-          placeholderTextColor="#9CA3AF"
-          value={confirmar}
-          onChangeText={setConfirmar}
-          secureTextEntry={true}
-        />
+      <TextInputs
+        placeholder="Confirmar contraseña"
+        value={confirmar}
+        onChangeText={setConfirmar}
+        security={true}
+        autoCorrect={false}
+        autoCapitalize="none"
+      />
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.boton,
-            { backgroundColor: pressed ? '#6CB1FF' : '#2456EE' },
-            cargando && { backgroundColor: '#9CA3AF' },
-          ]}
-          onPress={handleRegistro}
-          disabled={cargando}
-        >
-          <Text style={styles.botonTexto}>
-            {cargando ? 'Registrando...' : 'Registrarse'}
-          </Text>
-        </Pressable>
+      <Pressable
+        style={({ pressed }) => [
+          styles.boton,
+          { backgroundColor: pressed ? '#6CB1FF' : '#2456EE' },
+          cargando && { backgroundColor: '#9CA3AF' },
+        ]}
+        onPress={handleRegistro}
+        disabled={cargando}
+      >
+        <Text style={styles.botonTexto}>
+          {cargando ? 'Registrando...' : 'Registrarse'}
+        </Text>
+      </Pressable>
 
-        <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
-          <Text style={styles.link}>← Volver</Text>
-        </Pressable>
+      <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
+        <Text style={styles.link}>← Volver</Text>
+      </Pressable>
 
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </ScrollView>
   );
 }
 
@@ -157,38 +154,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 30,
-    paddingVertical: 40,
-  },
-  logo: {
-    width: 90,
-    height: 90,
-    marginBottom: 10,
+    marginBottom: 70,
   },
   titulo: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#2456EE',
-    marginBottom: 40,
-  },
-  input: {
-    width: '100%',
-    height: 55,
-    borderColor: '#D1D5DB',
-    borderWidth: 1.5,
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 16,
-    backgroundColor: '#FFFFFF',
-    fontSize: 16,
-    color: '#1A1A2E',
+    marginTop: 20,
+    marginBottom: 60,
   },
   boton: {
-    width: '100%',
+    width: '80%',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 60,
   },
   botonTexto: {
     color: '#FFFFFF',
@@ -198,5 +178,6 @@ const styles = StyleSheet.create({
   link: {
     color: '#2456EE',
     fontSize: 16,
+    marginTop: 5
   },
 });

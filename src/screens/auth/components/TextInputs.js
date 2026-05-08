@@ -5,11 +5,17 @@ export default function TextInputs(props) {
 
     const [focused, setFocused] = useState(false);
 
-    return <TextInput secureTextEntry={props.security} onFocus={() => { setFocused(true) }} onBlur={() => { setFocused(false) }}
-        placeholder={props.placeholder} style={[styles.input, focused &&
+    return <TextInput onFocus={() => { setFocused(true) }} onBlur={() => { setFocused(false) }}
+        style={[styles.input, focused &&
             { borderColor: "#2456ee" }]} 
         
         onChangeText={(text) => props.onChangeText(text)}
+
+        placeholder={props.placeholder}
+        secureTextEntry={props.security}
+        autoCapitalize={props.autoCapitalize}
+        keyboardType={props.keyboardType}
+        autoCorrect={props.autoCorrect}
         />
 }
 

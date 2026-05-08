@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SplashScreen from '../screens/splash/SplashScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterEmpresaScreen from '../screens/Register/RegisterEmpresaScreen';
+import RegisterusuarioScreen from '../screens/Register/RegisterUsuarioScreen';
 import CrearInformeScreen from '../screens/crear informes/CrearInformeScreen';
 
 const Stack = createNativeStackNavigator();
@@ -16,6 +17,7 @@ export default function Navigation() {
                 <Stack.Screen name='Splash' component={SplashScreen} />
                 <Stack.Screen name='Login' component={LoginScreen} />
                 <Stack.Screen name='Register' component={RegisterEmpresaScreen} />
+                <Stack.Screen name='RegisterUsuario' component={RegisterusuarioScreen} />
                 <Stack.Screen name='CrearInforme' component={CrearInformeScreen} />
             </Stack.Navigator>
         </NavigationContainer>
