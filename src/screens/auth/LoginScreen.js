@@ -22,13 +22,38 @@ export default function LoginScreen({ navigation }) {
           email,
           password,
         });
-      
+
         if (error) {
           Alert.alert("Correo o contraseña incorrectos");
           return;
         }
 
-        navigation.navigate('CrearInforme');
+        // Verificar si es un empleado — dos consultas separadas (más confiable que OR)
+        let { data: empleado } = await supabase
+          .from('empleados')
+          .select('activo')
+          .eq('auth_uid', data.user.id)
+          .maybeSingle();
+
+        if (!empleado) {
+          const { data: porEmail } = await supabase
+            .from('empleados')
+            .select('activo')
+            .eq('email', data.user.email)
+            .maybeSingle();
+          if (porEmail) empleado = porEmail;
+        }
+
+        if (empleado && !empleado.activo) {
+          await supabase.auth.signOut();
+          Alert.alert(
+            'Cuenta inactiva',
+            'Tu cuenta aún no ha sido activada. Contacta al administrador.'
+          );
+          return;
+        }
+
+        navigation.navigate('Home');
 
       } catch(error) {
         Alert.alert("Algo salio mal.");
