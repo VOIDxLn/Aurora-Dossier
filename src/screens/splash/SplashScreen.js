@@ -1,4 +1,4 @@
-import { View, image, StyleSheet, Animated, Text } from 'react-native';
+import { View, StyleSheet, Animated, Text } from 'react-native';
 import { useEffect, useRef } from 'react';
 
 import Logo from '../../components/Logo';
@@ -35,7 +35,6 @@ export default function SplashScreen({ navigation }) {
 
 const styles = StyleSheet.create({
     content: {
-        container: 1,
         flex: 1,
         alignItems: 'center',
         marginTop: 250,
