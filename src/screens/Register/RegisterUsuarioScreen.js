@@ -69,7 +69,7 @@ export default function RegisterUsuarioScreen({ navigation, route }) {
         .from('profiles')
         .update({
           empresa_id: empresaData.id,
-          rol: 'empleado',
+          rol: 'admin',
         })
         .eq('id', authData.user.id);
 
