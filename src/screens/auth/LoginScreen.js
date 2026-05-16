@@ -3,7 +3,6 @@ import { Alert, Pressable, StyleSheet, Text, View, ScrollView, Image, TextInput,
 import { useState } from 'react';
 
 import Logo from '../../components/Logo';
-import Button from '../../components/Button';
 import Icons from '../../components/Icons';
 
 import TextInputs from './components/TextInputs';

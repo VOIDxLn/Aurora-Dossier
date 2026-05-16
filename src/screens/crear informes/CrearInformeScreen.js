@@ -1,10 +1,9 @@
-import { StyleSheet, Pressable, KeyboardAvoidingView, Keyboard, Animated, View, Text, TextInput, Platform } from 'react-native';
+import { StyleSheet, Pressable, KeyboardAvoidingView, Keyboard, Animated, View, ScrollView, Text, TextInput, Platform, TouchableOpacity } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 import { useState, useEffect, useRef } from 'react';
 
 import Icons from '../../components/Icons';
-import Button from '../../components/Button';
 import MenuBar from '../../components/MenuBar';
 import Logo from '../../components/Logo';
 
@@ -13,6 +12,22 @@ export default function CrearInformeScreen() {
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const translateTittle = useRef(new Animated.Value(0)).current;
     const translateInput = useRef(new Animated.Value(0)).current;
+
+    // Pront message chat 
+    const [pront, setPront] = useState("");
+    const [chat, setChat] = useState("");
+    const [bubleMessage, setBubbleMessage] = useState([{ value: "" }]);
+
+    const send = (event) => {
+        event.preventDefault();
+
+        const message = [pront];
+
+        setBubbleMessage([...bubleMessage, { value: message }]);
+        setPront("");
+
+        return setChat(bubleMessage);
+    }
 
     useEffect(() => {
         const show = Keyboard.addListener('keyboardDidShow', (e) => {
@@ -72,6 +87,14 @@ export default function CrearInformeScreen() {
                     </View>
                 </Animated.View>
 
+                {/* Chat */}
+                <ScrollView>
+                    {bubleMessage.map((message, index) => (
+                        <View key={index}>
+                            <Text>{message.value}</Text>
+                        </View>
+                    ))}
+                </ScrollView>
 
                 <View style={{ alignItems: 'center' }}>
 
@@ -79,8 +102,18 @@ export default function CrearInformeScreen() {
 
                         <View style={styles.chatBar}>
                             <Icons name='paperclip' size={22} color='#2456ee' />
-                            <TextInput placeholder='Creemos tu informe juntos' style={styles.textInput}></TextInput>
-                            <Icons name='send' size={24} color='#2456ee' />
+                            <TextInput
+                                onChangeText={setPront} value={pront}
+                                placeholder='Creemos tu informe juntos' style={styles.textInput}>
+                            </TextInput>
+
+                            <TouchableOpacity
+                                onPress={send}
+
+                            ><Icons name='send' size={24} color='#2456ee' />
+                            </TouchableOpacity>
+
+
                         </View>
                     </Animated.View>
 
