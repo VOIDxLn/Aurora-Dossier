@@ -1,8 +1,11 @@
-import { View } from 'react-native';
+import { View, TextInput, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useRef, } from 'react';
 
-export default function Chat(){
+import Icons from '../../../components/Icons';
 
-    return (
-       <View></View> 
-    )
+export default function Chat() {
+
+
+
+    return
 }

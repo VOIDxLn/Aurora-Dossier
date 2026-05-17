@@ -17,16 +17,28 @@ export default function CrearInformeScreen() {
     const [pront, setPront] = useState("");
     const [chat, setChat] = useState("");
     const [bubleMessage, setBubbleMessage] = useState([{ value: "" }]);
+    const [deleteTitle, setDeleteTitle] = useState(true);
+    const [createChat, setCreateChat] = useState(false);
+
+    const author = 'user';
+    const messageText = [];
 
     const send = (event) => {
         event.preventDefault();
 
-        const message = [pront];
+        if (pront.trim() === "") {
+            event.preventDefault();
+            return;
+        } else {
+            const message = { author, messageText: pront };
 
-        setBubbleMessage([...bubleMessage, { value: message }]);
-        setPront("");
+            setBubbleMessage([...bubleMessage, { value: message.messageText }]);
+            setDeleteTitle(false);
+            setCreateChat(true);
+            setPront("");
 
-        return setChat(bubleMessage);
+            return setChat(bubleMessage);
+        }
     }
 
     useEffect(() => {
@@ -77,24 +89,36 @@ export default function CrearInformeScreen() {
             </View>
 
             <View
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', paddingTop: 120 }}
+                style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between' }}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
 
-                <Animated.View style={{ marginTop: 80, transform: [{ translateY: translateTittle }] }}>
+                {deleteTitle && (<Animated.View style={{ marginTop: 200, transform: [{ translateY: translateTittle }] }}>
                     <View style={{ width: '80%' }}>
                         <Text style={styles.tittle}>Que informe haremos hoy?</Text>
                     </View>
-                </Animated.View>
+                </Animated.View>)}
 
                 {/* Chat */}
-                <ScrollView>
+                {createChat && (<ScrollView style={{ width: '90%', marginBottom: 5 }}
+                    contentContainerStyle={{ gap: 5 }}>
                     {bubleMessage.map((message, index) => (
-                        <View key={index}>
+                        message.value ? 
+                        <View key={index}
+                            style={{
+                                maxWidth: '80%',
+                                borderRadius: 15,
+                                padding: 10,
+                                alignSelf: author === 'user' ? 'flex-end' : 'flex-start',
+                                backgroundColor: author === 'user' ? '#6cb1ff' : '#000000'
+                            }}
+                        >
                             <Text>{message.value}</Text>
                         </View>
+                        : null
                     ))}
-                </ScrollView>
+                </ScrollView>)}
+
 
                 <View style={{ alignItems: 'center' }}>
 
