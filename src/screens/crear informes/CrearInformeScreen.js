@@ -3,11 +3,19 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 
 import { useState, useEffect, useRef } from 'react';
 
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
+
 import Icons from '../../components/Icons';
 import MenuBar from '../../components/MenuBar';
 import Logo from '../../components/Logo';
 
 export default function CrearInformeScreen() {
+
+    const auroraIA = new ChatGoogleGenerativeAI({
+        model: 'gemini-2.5-flash',
+        apiKey: 'AIzaSyClfCZaC13PkJEPankpIuiOLjzj6y_61cs',
+        temperature: 0.7,
+    })
 
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const translateTittle = useRef(new Animated.Value(0)).current;
@@ -23,21 +31,46 @@ export default function CrearInformeScreen() {
     const author = 'user';
     const messageText = [];
 
-    const send = (event) => {
+    let conversationSave = [];
+
+    const send = async (event) => {
         event.preventDefault();
 
         if (pront.trim() === "") {
             event.preventDefault();
             return;
         } else {
-            const message = { author, messageText: pront };
+            const message = { author: 'user', messageText: pront };
 
-            setBubbleMessage([...bubleMessage, { value: message.messageText }]);
+            setBubbleMessage(prevMessage => [
+                ...prevMessage,
+                { author: 'user', value: message.messageText }
+            ]);
+
+            setPront("");
             setDeleteTitle(false);
             setCreateChat(true);
-            setPront("");
 
-            return setChat(bubleMessage);
+            let answer = await auroraIA.invoke(message.messageText);
+            let aiMessage = answer.content;
+            const answerMessage = { author: 'ai', aiText: aiMessage }
+
+            setBubbleMessage(prevMessage => [
+                ...prevMessage,
+                { author: 'ai', value: answerMessage.aiText }
+            ]);
+
+            /*
+            setBubbleMessage([...bubleMessage, { author: 'user', value: message.messageText },
+            { author: 'ai', value: answerMessage.aiText }
+            ]); */
+            conversationSave.push(message);
+            let json = JSON.stringify(conversationSave, null, 2);
+
+
+            setChat(bubleMessage),
+                console.log(json),
+                console.log(answerMessage)
         }
     }
 
@@ -103,19 +136,19 @@ export default function CrearInformeScreen() {
                 {createChat && (<ScrollView style={{ width: '90%', marginBottom: 5 }}
                     contentContainerStyle={{ gap: 5 }}>
                     {bubleMessage.map((message, index) => (
-                        message.value ? 
-                        <View key={index}
-                            style={{
-                                maxWidth: '80%',
-                                borderRadius: 15,
-                                padding: 10,
-                                alignSelf: author === 'user' ? 'flex-end' : 'flex-start',
-                                backgroundColor: author === 'user' ? '#6cb1ff' : '#000000'
-                            }}
-                        >
-                            <Text>{message.value}</Text>
-                        </View>
-                        : null
+                        message.value ?
+                            <View key={index}
+                                style={{
+                                    maxWidth: '80%',
+                                    borderRadius: 15,
+                                    padding: 10,
+                                    alignSelf: message.author === 'user' ? 'flex-end' : 'flex-start',
+                                    backgroundColor: message.author === 'user' ? '#6cb1ff' : '#DFDFDF'
+                                }}
+                            >
+                                <Text>{message.value}</Text>
+                            </View>
+                            : null
                     ))}
                 </ScrollView>)}
 
