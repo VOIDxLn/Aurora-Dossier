@@ -1,114 +1,26 @@
-import { StyleSheet, Pressable, KeyboardAvoidingView, Keyboard, Animated, View, ScrollView, Text, TextInput, Platform, TouchableOpacity } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { StyleSheet, View, Text, Platform } from 'react-native';
 
-import { useState, useEffect, useRef } from 'react';
-
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
-
-import Icons from '../../components/Icons';
 import MenuBar from '../../components/MenuBar';
-import Logo from '../../components/Logo';
+
+import { useChatService } from './hooks/useChatService';
+import { useKeyboardAnimations } from './hooks/useKeyboardAnimations';
+
+import WelcomeHeader from './components/WelcomeHeader';
+import MessageList from './components/MessageList';
+import ChatInputBar from './components/ChatInputBar';
 
 export default function CrearInformeScreen() {
 
-    const auroraIA = new ChatGoogleGenerativeAI({
-        model: 'gemini-2.5-flash',
-        apiKey: 'AIzaSyClfCZaC13PkJEPankpIuiOLjzj6y_61cs',
-        temperature: 0.7,
-    })
+    const { pront,
+        bubbleMessage,
+        deleteTitle,
+        createChat,
+        setPront,
+        send } = useChatService();
 
-    const [keyboardVisible, setKeyboardVisible] = useState(false);
-    const translateTittle = useRef(new Animated.Value(0)).current;
-    const translateInput = useRef(new Animated.Value(0)).current;
-
-    // Pront message chat 
-    const [pront, setPront] = useState("");
-    const [chat, setChat] = useState("");
-    const [bubleMessage, setBubbleMessage] = useState([{ value: "" }]);
-    const [deleteTitle, setDeleteTitle] = useState(true);
-    const [createChat, setCreateChat] = useState(false);
-
-    const author = 'user';
-    const messageText = [];
-
-    let conversationSave = [];
-
-    const send = async (event) => {
-        event.preventDefault();
-
-        if (pront.trim() === "") {
-            event.preventDefault();
-            return;
-        } else {
-            const message = { author: 'user', messageText: pront };
-
-            setBubbleMessage(prevMessage => [
-                ...prevMessage,
-                { author: 'user', value: message.messageText }
-            ]);
-
-            setPront("");
-            setDeleteTitle(false);
-            setCreateChat(true);
-
-            let answer = await auroraIA.invoke(message.messageText);
-            let aiMessage = answer.content;
-            const answerMessage = { author: 'ai', aiText: aiMessage }
-
-            setBubbleMessage(prevMessage => [
-                ...prevMessage,
-                { author: 'ai', value: answerMessage.aiText }
-            ]);
-
-            /*
-            setBubbleMessage([...bubleMessage, { author: 'user', value: message.messageText },
-            { author: 'ai', value: answerMessage.aiText }
-            ]); */
-            conversationSave.push(message);
-            let json = JSON.stringify(conversationSave, null, 2);
-
-
-            setChat(bubleMessage),
-                console.log(json),
-                console.log(answerMessage)
-        }
-    }
-
-    useEffect(() => {
-        const show = Keyboard.addListener('keyboardDidShow', (e) => {
-            const height = e.endCoordinates.height;
-            Animated.timing(translateTittle, {
-                toValue: -height * 0.3,
-                duration: 250,
-                useNativeDriver: true,
-            }).start();
-            Animated.timing(translateInput, {
-                toValue: height,
-                duration: 250,
-                useNativeDriver: true,
-            }).start();
-            setKeyboardVisible(true);
-        });
-
-        const hide = Keyboard.addListener('keyboardDidHide', () => {
-            Animated.timing(translateTittle, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-            Animated.timing(translateInput, {
-                toValue: 0,
-                duration: 250,
-                useNativeDriver: true,
-            }).start();
-            setKeyboardVisible(false);
-        });
-
-        return () => {
-            show.remove();
-            hide.remove();
-        }
-    }, [])
+    const { keyboardVisible,
+        translateTittle,
+        translateInput } = useKeyboardAnimations();
 
     return (
 
@@ -126,54 +38,15 @@ export default function CrearInformeScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
 
-                {deleteTitle && (<Animated.View style={{ marginTop: 200, transform: [{ translateY: translateTittle }] }}>
-                    <View style={{ width: '80%' }}>
-                        <Text style={styles.tittle}>Que informe haremos hoy?</Text>
-                    </View>
-                </Animated.View>)}
+                {/* TITLE */}
+                <WelcomeHeader deleteTitle={deleteTitle} translateTittle={translateTittle} />
 
-                {/* Chat */}
-                {createChat && (<ScrollView style={{ width: '90%', marginBottom: 5 }}
-                    contentContainerStyle={{ gap: 5 }}>
-                    {bubleMessage.map((message, index) => (
-                        message.value ?
-                            <View key={index}
-                                style={{
-                                    maxWidth: '80%',
-                                    borderRadius: 15,
-                                    padding: 10,
-                                    alignSelf: message.author === 'user' ? 'flex-end' : 'flex-start',
-                                    backgroundColor: message.author === 'user' ? '#6cb1ff' : '#DFDFDF'
-                                }}
-                            >
-                                <Text>{message.value}</Text>
-                            </View>
-                            : null
-                    ))}
-                </ScrollView>)}
-
+                {/* CHAT */}
+                <MessageList createChat={createChat} bubbleMessage={bubbleMessage} />
 
                 <View style={{ alignItems: 'center' }}>
-
-                    <Animated.View style={{ transform: [{ translateY: Animated.multiply(translateInput, - 1) }] }}>
-
-                        <View style={styles.chatBar}>
-                            <Icons name='paperclip' size={22} color='#2456ee' />
-                            <TextInput
-                                onChangeText={setPront} value={pront}
-                                placeholder='Creemos tu informe juntos' style={styles.textInput}>
-                            </TextInput>
-
-                            <TouchableOpacity
-                                onPress={send}
-
-                            ><Icons name='send' size={24} color='#2456ee' />
-                            </TouchableOpacity>
-
-
-                        </View>
-                    </Animated.View>
-
+                    {/* INPUT */}
+                    <ChatInputBar translateInput={translateInput} pront={pront} setPront={setPront} send={send} />
                 </View>
 
             </View>
@@ -193,29 +66,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f3f4f6',
-    },
-    tittle: {
-        color: '#5b5b5b',
-        fontSize: 28,
-        fontWeight: 'bold',
-        textAlign: 'center'
-    },
-    textInput: {
-        width: '78%',
-        height: 45,
-        backgroundColor: '#dfdfdf',
-    },
-    chatBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        width: '100%',
-        backgroundColor: '#dfdfdf',
-        borderRadius: 10,
-        paddingLeft: 10,
-        paddingRight: 10,
-        borderWidth: 2,
-        borderColor: '#6cb1ff'
     },
     text: {
         color: '#b1b1b1',
