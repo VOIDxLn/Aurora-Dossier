@@ -8,38 +8,40 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Logo from '../../components/Logo';
 import DrawerMenu from '../../components/DrawerMenu';
 import { supabase } from '../../lib/supabase';
+import { useUser } from '../../context/UserContext';
 
+/* ─── Pantalla de edición (Admin y Empleado) ─── */
 export default function EditarDatos({ navigation }) {
+    const { userData, refreshUser } = useUser();
+    const isAdmin = userData?.tipo === 'admin';
+
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [loading, setLoading]             = useState(true);
     const [saving, setSaving]               = useState(false);
 
+    // ── Campos Admin ──────────────────────────────────────
     const [nit,       setNit]       = useState('');
     const [nombre,    setNombre]    = useState('');
     const [domicilio, setDomicilio] = useState('');
     const [correo,    setCorreo]    = useState('');
-    const [password,  setPassword]  = useState('');
+
+    // ── Campos Empleado ───────────────────────────────────
+    const [nombreEmp, setNombreEmp] = useState('');
+    const [emailEmp,  setEmailEmp]  = useState('');   // solo lectura
+
+    // ── Campo compartido ──────────────────────────────────
+    const [password, setPassword] = useState('');
 
     useEffect(() => { loadData(); }, []);
 
+    /* ── Carga de datos ─────────────────────────────────── */
     const loadData = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            const { data: perfil } = await supabase
-                .from('profiles')
-                .select('empresa_id')
-                .eq('id', user.id)
-                .single();
-            const { data: empresa } = await supabase
-                .from('empresas')
-                .select('*')
-                .eq('id', perfil.empresa_id)
-                .single();
-
-            setNit(String(empresa.nit ?? ''));
-            setNombre(empresa.razon_social ?? '');
-            setDomicilio(empresa.domicilio_fiscal ?? '');
-            setCorreo(empresa.correo ?? '');
+            if (isAdmin) {
+                await loadAdminData();
+            } else {
+                await loadEmpleadoData();
+            }
         } catch {
             Alert.alert('Error', 'No se pudo cargar la información');
         } finally {
@@ -47,38 +49,126 @@ export default function EditarDatos({ navigation }) {
         }
     };
 
+    const loadAdminData = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: perfil, error: perfilError } = await supabase
+            .from('profiles')
+            .select('empresa_id')
+            .eq('id', user.id)
+            .single();
+
+        if (perfilError || !perfil?.empresa_id) {
+            // Admin sin empresa vinculada — no hay nada que cargar
+            return;
+        }
+
+        const { data: empresa, error: empresaError } = await supabase
+            .from('empresas')
+            .select('*')
+            .eq('id', perfil.empresa_id)
+            .single();
+
+        if (empresaError) throw empresaError;
+
+        setNit(String(empresa.nit ?? ''));
+        setNombre(empresa.razon_social ?? '');
+        setDomicilio(empresa.domicilio_fiscal ?? '');
+        setCorreo(empresa.correo ?? '');
+    };
+
+    const loadEmpleadoData = async () => {
+        // Usar los datos ya disponibles en el contexto — evita re-fetch innecesario
+        setNombreEmp(userData?.nombre ?? '');
+        setEmailEmp(userData?.email ?? '');
+    };
+
+    /* ── Validaciones ───────────────────────────────────── */
+    const validate = () => {
+        if (isAdmin) {
+            if (!nombre.trim()) {
+                Alert.alert('Campo requerido', 'El nombre / razón social no puede estar vacío.');
+                return false;
+            }
+            if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+                Alert.alert('Correo inválido', 'Ingresa un correo electrónico válido.');
+                return false;
+            }
+        } else {
+            if (!nombreEmp.trim()) {
+                Alert.alert('Campo requerido', 'El nombre no puede estar vacío.');
+                return false;
+            }
+        }
+
+        if (password.length > 0 && password.length < 6) {
+            Alert.alert('Contraseña muy corta', 'La contraseña debe tener al menos 6 caracteres.');
+            return false;
+        }
+
+        return true;
+    };
+
+    /* ── Guardado ───────────────────────────────────────── */
     const handleSave = async () => {
+        if (!validate()) return;
         setSaving(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            const { data: perfil } = await supabase
-                .from('profiles')
-                .select('empresa_id')
-                .eq('id', user.id)
-                .single();
+            if (isAdmin) {
+                await saveAdminData();
+            } else {
+                await saveEmpleadoData();
+            }
 
-            const { error: empError } = await supabase
-                .from('empresas')
-                .update({ razon_social: nombre, domicilio_fiscal: domicilio, correo })
-                .eq('id', perfil.empresa_id);
-
-            if (empError) throw empError;
-
+            // Actualizar contraseña si se proporcionó
             if (password.length > 0) {
-                if (password.length < 6) throw new Error('La contraseña debe tener mínimo 6 caracteres');
                 const { error: passError } = await supabase.auth.updateUser({ password });
                 if (passError) throw passError;
             }
 
-            Alert.alert('Éxito', 'Datos actualizados correctamente');
+            // Refrescar el contexto global para que el saludo en Home se actualice
+            await refreshUser();
+
+            Alert.alert('✅ Éxito', 'Datos actualizados correctamente.');
             setPassword('');
         } catch (e) {
-            Alert.alert('Error', e.message ?? 'No se pudo guardar');
+            Alert.alert('Error', e.message ?? 'No se pudo guardar. Intenta de nuevo.');
         } finally {
             setSaving(false);
         }
     };
 
+    const saveAdminData = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: perfil } = await supabase
+            .from('profiles')
+            .select('empresa_id')
+            .eq('id', user.id)
+            .single();
+
+        const { error } = await supabase
+            .from('empresas')
+            .update({
+                razon_social:     nombre.trim(),
+                domicilio_fiscal: domicilio.trim(),
+                correo:           correo.trim(),
+            })
+            .eq('id', perfil.empresa_id);
+
+        if (error) throw error;
+    };
+
+    const saveEmpleadoData = async () => {
+        if (!userData?.id) throw new Error('No se encontró el registro del empleado.');
+
+        const { error } = await supabase
+            .from('empleados')
+            .update({ nombre: nombreEmp.trim() })
+            .eq('id', userData.id);
+
+        if (error) throw error;
+    };
+
+    /* ── Loading inicial ────────────────────────────────── */
     if (loading) {
         return (
             <SafeAreaView style={[styles.safeArea, styles.centered]}>
@@ -87,6 +177,7 @@ export default function EditarDatos({ navigation }) {
         );
     }
 
+    /* ── Render principal ───────────────────────────────── */
     return (
         <SafeAreaView style={styles.safeArea}>
             <DrawerMenu
@@ -98,6 +189,7 @@ export default function EditarDatos({ navigation }) {
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
                 {/* Header */}
                 <View style={styles.header}>
@@ -112,39 +204,76 @@ export default function EditarDatos({ navigation }) {
                 {/* Avatar */}
                 <View style={styles.avatarSection}>
                     <MaterialCommunityIcons name="account-circle" size={100} color="#2456ee" />
+                    <Text style={styles.avatarTitle}>
+                        {isAdmin ? 'Datos de empresa' : 'Mis datos personales'}
+                    </Text>
                 </View>
 
-                {/* Formulario */}
-                <View style={styles.form}>
-                    {/* NIT — solo lectura */}
-                    <View style={styles.fieldWrapper}>
-                        <Text style={styles.fieldLabel}>Nit</Text>
-                        <View style={styles.fieldRow}>
-                            <Text style={styles.readOnlyValue}>{nit}</Text>
+                {/* Formulario Admin */}
+                {isAdmin && (
+                    <View style={styles.form}>
+                        {/* NIT — solo lectura */}
+                        <View style={styles.fieldWrapper}>
+                            <Text style={styles.fieldLabel}>NIT</Text>
+                            <View style={styles.fieldRow}>
+                                <Text style={styles.readOnlyValue}>{nit}</Text>
+                                <MaterialCommunityIcons name="lock-outline" size={16} color="#D1D5DB" />
+                            </View>
                         </View>
-                    </View>
 
-                    <Field label="Nombre"          value={nombre}    onChangeText={setNombre} />
-                    <Field label="Domicilio fiscal" value={domicilio} onChangeText={setDomicilio} />
-                    <Field label="Correo"           value={correo}    onChangeText={setCorreo}    keyboardType="email-address" />
-                    <Field
-                        label="Contraseña"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                        placeholder="Nueva contraseña"
-                    />
-                </View>
+                        <Field label="Nombre / Razón social" value={nombre}    onChangeText={setNombre} />
+                        <Field label="Domicilio fiscal"       value={domicilio} onChangeText={setDomicilio} />
+                        <Field label="Correo"                 value={correo}    onChangeText={setCorreo} keyboardType="email-address" />
+                        <Field
+                            label="Nueva contraseña"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                            placeholder="Dejar vacío para no cambiar"
+                        />
+                    </View>
+                )}
+
+                {/* Formulario Empleado */}
+                {!isAdmin && (
+                    <View style={styles.form}>
+                        <Field
+                            label="Nombre"
+                            value={nombreEmp}
+                            onChangeText={setNombreEmp}
+                            placeholder="Tu nombre"
+                        />
+
+                        {/* Email — solo lectura (correo laboral asignado) */}
+                        <View style={styles.fieldWrapper}>
+                            <Text style={styles.fieldLabel}>Correo laboral</Text>
+                            <View style={styles.fieldRow}>
+                                <Text style={styles.readOnlyValue}>{emailEmp}</Text>
+                                <MaterialCommunityIcons name="lock-outline" size={16} color="#D1D5DB" />
+                            </View>
+                            <Text style={styles.fieldHint}>El correo es asignado por la empresa.</Text>
+                        </View>
+
+                        <Field
+                            label="Nueva contraseña"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                            placeholder="Dejar vacío para no cambiar"
+                        />
+                    </View>
+                )}
 
                 {/* Botón guardar */}
                 <TouchableOpacity
-                    style={[styles.saveBtn, saving && { backgroundColor: '#6cb1ff' }]}
+                    style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
                     onPress={handleSave}
                     disabled={saving}
+                    activeOpacity={0.8}
                 >
                     {saving
                         ? <ActivityIndicator color="#fff" />
-                        : <Text style={styles.saveBtnText}>Guardar</Text>
+                        : <Text style={styles.saveBtnText}>Guardar cambios</Text>
                     }
                 </TouchableOpacity>
             </ScrollView>
@@ -152,6 +281,7 @@ export default function EditarDatos({ navigation }) {
     );
 }
 
+/* ─── Componente de campo reutilizable ─── */
 function Field({ label, value, onChangeText, secureTextEntry, keyboardType, placeholder }) {
     return (
         <View style={styles.fieldWrapper}>
@@ -173,6 +303,7 @@ function Field({ label, value, onChangeText, secureTextEntry, keyboardType, plac
     );
 }
 
+/* ─── Estilos (sin cambios visuales respecto al original) ─── */
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#f3f4f6' },
     centered: { justifyContent: 'center', alignItems: 'center' },
@@ -191,10 +322,17 @@ const styles = StyleSheet.create({
     },
 
     avatarSection: { alignItems: 'center', marginBottom: 28 },
+    avatarTitle: {
+        fontSize: 14,
+        color: '#5b5b5b',
+        marginTop: 8,
+        fontWeight: '500',
+    },
 
     form: {},
     fieldWrapper: { marginBottom: 22 },
     fieldLabel: { fontSize: 12, color: '#5b5b5b', marginBottom: 6 },
+    fieldHint:  { fontSize: 11, color: '#9CA3AF', marginTop: 4 },
     fieldRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -203,7 +341,7 @@ const styles = StyleSheet.create({
         paddingBottom: 8,
     },
     readOnlyValue: { flex: 1, fontSize: 16, color: '#9CA3AF' },
-    fieldInput: { flex: 1, fontSize: 16, color: '#1A1A2E', paddingVertical: 2 },
+    fieldInput:    { flex: 1, fontSize: 16, color: '#1A1A2E', paddingVertical: 2 },
 
     saveBtn: {
         backgroundColor: '#2456ee',
@@ -214,5 +352,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 32,
     },
-    saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    saveBtnDisabled: { backgroundColor: '#6cb1ff' },
+    saveBtnText:     { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
