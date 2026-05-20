@@ -1,56 +1,56 @@
 import {
     View, Text, StyleSheet, TextInput,
-    Pressable, SafeAreaView, StatusBar,
-    ActivityIndicator, Animated,
+    SafeAreaView, StatusBar, Pressable,
+    Animated, ActivityIndicator,
 } from 'react-native';
 import { useState, useRef, useCallback } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import Logo       from '../../components/Logo';
+import Logo from '../../components/Logo';
 import DrawerMenu from '../../components/DrawerMenu';
 import { useUser } from '../../context/UserContext';
 
-/* ─── Tarjetas de navegación ─── */
+/* ─── Cards del empleado (según Figma) ─── */
 const CARDS = [
     {
-        label: 'Consultar\ninformes',
-        icon:  'file-document-outline',
+        label: 'Crear informe',
+        icon: 'file-plus-outline',
+        color: '#2456ee',
+        bg: '#EFF6FF',
+        route: 'CrearInforme',
+    },
+    {
+        label: 'Gestionar\ninforme',
+        icon: 'paperclip',
         color: '#EF5350',
-        bg:    '#FEF2F2',
+        bg: '#FFF5F5',
         route: 'Informes',
     },
     {
-        label: 'Novedades',
-        icon:  'newspaper-variant-outline',
+        label: 'Historial',
+        icon: 'folder-open-outline',
         color: '#F59E0B',
-        bg:    '#FFFBEB',
-        route: 'Novedades',
+        bg: '#FFFBEB',
+        route: 'Carpetas',
     },
     {
-        label: 'Gráficos',
-        icon:  'chart-bar',
+        label: 'Pendientes',
+        icon: 'clipboard-list-outline',
         color: '#FF9800',
-        bg:    '#FFF3E0',
-        route: 'Graficos',
-    },
-    {
-        label: 'Crear\ninforme',
-        icon:  'file-plus-outline',
-        color: '#2456ee',
-        bg:    '#EFF6FF',
-        route: 'CrearInforme',
+        bg: '#FFF8F0',
+        route: 'Informes',
     },
 ];
 
-/* ─── Botones inferiores — carpeta ahora navega a Carpetas ─── */
+/* ─── Bottom nav (según Figma) ─── */
 const BOTTOM_NAV = [
-    { icon: 'account-outline', route: 'Home'          },
-    { icon: 'cog-outline',     route: 'Configuracion' },
-    { icon: 'bell-outline',    route: 'Novedades'     },
-    { icon: 'folder-outline',  route: 'Carpetas'      },   // ← ACTIVO
+    { icon: 'account-outline',    label: 'Perfil',         route: 'Configuracion' },
+    { icon: 'cog-outline',        label: 'Configuración',  route: 'Configuracion' },
+    { icon: 'bell-outline',       label: 'Notificaciones', route: null            },
+    { icon: 'folder-outline',     label: 'Archivos',       route: 'Carpetas'      },
 ];
 
-/* ─── Card con animación de escala ─── */
+/* ─── Card con animación de press ─── */
 function NavCard({ card, onPress }) {
     const scale = useRef(new Animated.Value(1)).current;
 
@@ -142,7 +142,7 @@ export default function HomeEmpleadoScreen({ navigation }) {
                 navigation={navigation}
             />
 
-            {/* ── Contenido ── */}
+            {/* ── Contenido scrollable ── */}
             <View style={styles.content}>
 
                 {/* Header */}
@@ -213,9 +213,10 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 20,
         paddingTop: 16,
-        paddingBottom: 90,
+        paddingBottom: 90,      // espacio para la barra inferior
     },
 
+    /* Header */
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -230,10 +231,12 @@ const styles = StyleSheet.create({
     },
     headerBtnPressed: { opacity: 0.5 },
 
+    /* Saludo */
     greeting:          { fontSize: 26, color: '#1A1A2E', marginBottom: 2 },
     greetingHighlight: { color: '#2456ee', fontWeight: 'bold' },
     subtitle:          { fontSize: 15, color: '#5b5b5b', marginBottom: 20 },
 
+    /* Buscador */
     searchBar: {
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: '#FFFFFF', borderRadius: 12,
@@ -244,12 +247,14 @@ const styles = StyleSheet.create({
     },
     searchInput: { flex: 1, fontSize: 15, color: '#1A1A2E' },
 
+    /* Grid */
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 14,
     },
 
+    /* Card */
     cardPressable: { width: '47.5%' },
     cardPressed:   {},
     card: {
@@ -280,6 +285,7 @@ const styles = StyleSheet.create({
         lineHeight: 19,
     },
 
+    /* Bottom Navigation */
     bottomNav: {
         position: 'absolute', bottom: 0, left: 0, right: 0,
         flexDirection: 'row',
