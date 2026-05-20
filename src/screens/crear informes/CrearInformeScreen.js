@@ -1,15 +1,14 @@
 import { StyleSheet, Pressable, KeyboardAvoidingView, Keyboard, Animated, View, Text, TextInput, Platform } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-
 import { useState, useEffect, useRef } from 'react';
 
 import Icons from '../../components/Icons';
 import Button from '../../components/Button';
 import MenuBar from '../../components/MenuBar';
 import Logo from '../../components/Logo';
+import DrawerMenu from '../../components/DrawerMenu';
 
-export default function CrearInformeScreen() {
-
+export default function CrearInformeScreen({ navigation }) {
+    const [drawerVisible, setDrawerVisible] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const translateTittle = useRef(new Animated.Value(0)).current;
     const translateInput = useRef(new Animated.Value(0)).current;
@@ -51,42 +50,43 @@ export default function CrearInformeScreen() {
     }, [])
 
     return (
-
         <View style={styles.container}>
+            <DrawerMenu
+                visible={drawerVisible}
+                onClose={() => setDrawerVisible(false)}
+                navigation={navigation}
+            />
 
             <View style={{ alignItems: 'center', marginTop: 50, zIndex: 10 }}>
                 <View style={{ width: '90%' }}>
-                    <MenuBar />
+                    <MenuBar onPressMenu={() => setDrawerVisible(true)} />
                 </View>
-
             </View>
 
             <View
                 style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', paddingTop: 120 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-
                 <Animated.View style={{ marginTop: 80, transform: [{ translateY: translateTittle }] }}>
-                    <View style={{ width: '80%' }}>
+                    <View style={{ width: '80%', alignSelf: 'center' }}>
                         <Text style={styles.tittle}>Que informe haremos hoy?</Text>
                     </View>
                 </Animated.View>
 
-
-                <View style={{ alignItems: 'center' }}>
-
-                    <Animated.View style={{ transform: [{ translateY: Animated.multiply(translateInput, - 1) }] }}>
-
+                <View style={{ alignItems: 'center', width: '100%' }}>
+                    <Animated.View style={{ width: '90%', transform: [{ translateY: Animated.multiply(translateInput, - 1) }] }}>
                         <View style={styles.chatBar}>
                             <Icons name='paperclip' size={22} color='#2456ee' />
-                            <TextInput placeholder='Creemos tu informe juntos' style={styles.textInput}></TextInput>
+                            <TextInput
+                                placeholder='Creemos tu informe juntos'
+                                style={styles.textInput}
+                                placeholderTextColor="#9CA3AF"
+                            />
                             <Icons name='send' size={24} color='#2456ee' />
                         </View>
                     </Animated.View>
-
                 </View>
-
             </View>
+
             {!keyboardVisible && (
                 <View style={{ alignItems: 'center', marginBottom: 40 }}>
                     <View style={{ flexDirection: 'row', marginTop: 20 }}>
@@ -111,21 +111,24 @@ const styles = StyleSheet.create({
         textAlign: 'center'
     },
     textInput: {
-        width: '78%',
+        flex: 1,
         height: 45,
         backgroundColor: '#dfdfdf',
+        color: '#1A1A2E',
+        fontSize: 15,
+        paddingHorizontal: 8,
     },
     chatBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 8,
         width: '100%',
         backgroundColor: '#dfdfdf',
         borderRadius: 10,
-        paddingLeft: 10,
-        paddingRight: 10,
+        paddingHorizontal: 12,
         borderWidth: 2,
-        borderColor: '#6cb1ff'
+        borderColor: '#6cb1ff',
+        height: 52,
     },
     text: {
         color: '#b1b1b1',

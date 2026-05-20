@@ -67,10 +67,15 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
     return (
         <Modal transparent visible={visible} onRequestClose={handleClose} animationType="none">
             <View style={styles.overlay}>
+                {/* Overlay oscuro de fondo */}
+                <TouchableOpacity
+                    style={StyleSheet.absoluteFillObject}
+                    onPress={handleClose}
+                    activeOpacity={1}
+                />
 
                 {/* Panel */}
                 <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}>
-
                     <View style={styles.drawerContent}>
                         {/* Cabecera */}
                         <View style={styles.drawerHeader}>
@@ -111,17 +116,21 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
                         <MaterialCommunityIcons name="chevron-left" size={22} color="#5b5b5b" />
                     </TouchableOpacity>
                 </Animated.View>
-
-                {/* Overlay oscuro */}
-                <TouchableOpacity style={{ flex: 1 }} onPress={handleClose} activeOpacity={1} />
             </View>
         </Modal>
     );
 }
 
 const styles = StyleSheet.create({
-    overlay: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.45)' },
-    drawer:  { flexDirection: 'row' },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+    drawer:  {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: DRAWER_WIDTH + BTN_W,
+        flexDirection: 'row',
+    },
 
     drawerContent: { width: DRAWER_WIDTH, backgroundColor: '#fff' },
 

@@ -53,7 +53,12 @@ export default function LoginScreen({ navigation }) {
           return;
         }
 
-        navigation.navigate('Home');
+        // Redirigir según tipo de usuario
+        if (empleado) {
+          navigation.navigate('HomeEmpleado');
+        } else {
+          navigation.navigate('Home');
+        }
 
       } catch(error) {
         Alert.alert("Algo salio mal.");

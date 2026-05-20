@@ -6,6 +6,7 @@ import LoginScreen           from '../screens/auth/LoginScreen';
 import RegisterEmpresaScreen from '../screens/Register/RegisterEmpresaScreen';
 import RegisterUsuarioScreen from '../screens/Register/RegisterUsuarioScreen';
 import HomeScreen            from '../screens/home/HomeScreen';
+import HomeEmpleadoScreen    from '../screens/home/HomeEmpleadoScreen';
 import CrearInformeScreen    from '../screens/crear informes/CrearInformeScreen';
 import InformesScreen        from '../screens/informes/InformesScreen';
 import GestionUsuarios       from '../screens/GestionUsuarios';
@@ -15,6 +16,7 @@ import GraficosScreen        from '../screens/graficos/GraficosScreen';
 import EditarDatos           from '../screens/EditarDatos';
 import SuscripcionScreen     from '../screens/suscripcion/SuscripcionScreen';
 import ConfiguracionScreen   from '../screens/configuracion/ConfiguracionScreen';
+import CarpetasScreen        from '../screens/carpetas/CarpetasScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +32,7 @@ export default function Navigation() {
                 <Stack.Screen name='Register'        component={RegisterEmpresaScreen} />
                 <Stack.Screen name='RegisterUsuario' component={RegisterUsuarioScreen} />
                 <Stack.Screen name='Home'            component={HomeScreen} />
+                <Stack.Screen name='HomeEmpleado'    component={HomeEmpleadoScreen} />
                 <Stack.Screen name='CrearInforme'    component={CrearInformeScreen} />
                 <Stack.Screen name='Informes'        component={InformesScreen} />
                 <Stack.Screen name='Usuarios'        component={GestionUsuarios} />
@@ -39,6 +42,7 @@ export default function Navigation() {
                 <Stack.Screen name='EditarDatos'     component={EditarDatos} />
                 <Stack.Screen name='Suscripcion'     component={SuscripcionScreen} />
                 <Stack.Screen name='Configuracion'   component={ConfiguracionScreen} />
+                <Stack.Screen name='Carpetas'        component={CarpetasScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

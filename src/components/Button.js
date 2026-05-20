@@ -3,6 +3,7 @@ import { StyleSheet, Pressable, Text } from 'react-native';
 export default function Button(props) {
 
     return <Pressable
+        onPress={props.onPress}
         style={({ pressed }) => (
             {
                 backgroundColor: pressed ? props.pressedButtonColor : props.buttonColor,
