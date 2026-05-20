@@ -1,13 +1,21 @@
 import { View, Text, TextInput, TouchableOpacity, Animated } from 'react-native';
 
 import Icons from '../../../components/Icons';
+import { FileSelectorBox } from  '../UploadFiles/components/FileSelectorBox';
 
-export default function ChatInputBar({ translateInput, pront, setPront, send }) {
+export default function ChatInputBar({ translateInput, pront, setPront, send, onSelectFile, fileInfo, setFileInfo }) {
 
     return <Animated.View style={{ transform: [{ translateY: Animated.multiply(translateInput, - 1) }] }}>
 
+        <FileSelectorBox fileInfo={fileInfo} setFileInfo={setFileInfo} />
+
         <View style={styles.chatBar}>
-            <Icons name='paperclip' size={22} color='#2456ee' />
+            <TouchableOpacity
+                onPress={onSelectFile}
+
+            ><Icons name='paperclip' size={22} color='#2456ee' />
+            </TouchableOpacity>
+
             <TextInput
                 onChangeText={setPront} value={pront}
                 placeholder='Creemos tu informe juntos' style={styles.textInput}>

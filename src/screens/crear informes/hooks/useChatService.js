@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 
+import { readFileFormatAI } from '../UploadFiles/hooks/readFileFormatAI';
+
 export function useChatService() {
 
     const auroraIA = new ChatGoogleGenerativeAI({
@@ -15,25 +17,35 @@ export function useChatService() {
     const [deleteTitle, setDeleteTitle] = useState(true);
     const [createChat, setCreateChat] = useState(false);
 
-    const send = async () => {
+    const send = async (fileInfo, setFileInfo) => {
 
-        if (pront.trim() === "") {
+
+        if (pront.trim() === "" && !fileInfo) {
             return;
         }
 
         const message = { author: 'user', messageText: pront };
+
+        const currentPront = message.messageText;
 
         setBubbleMessage(prevMessage => [
             ...prevMessage,
             { author: 'user', value: message.messageText }
         ]);
 
-        setPront("");
-        setDeleteTitle(false);
-        setCreateChat(true);
-
         try {
-            let answer = await auroraIA.invoke(message.messageText);
+            console.log("🚀 Generando formato estructurado...");
+
+            const formattedMessage = readFileFormatAI(currentPront, fileInfo);
+
+            setPront("");
+            if (setFileInfo) setFileInfo(null);
+            setDeleteTitle(false);
+            setCreateChat(true);
+
+            console.log("📤 Enviando payload a Aurora AI...");
+
+            let answer = await auroraIA.invoke(formattedMessage);
             let aiMessage = answer.content;
             const answerMessage = { author: 'ai', aiText: aiMessage }
 
@@ -42,8 +54,8 @@ export function useChatService() {
                 { author: 'ai', value: answerMessage.aiText }
             ]);
 
-            console.log(answerMessage)
-        } catch(err) {
+            console.log(answerMessage.aiText)
+        } catch (err) {
             console.log("Error en la respuesta de Aurora AI", err);
         }
 

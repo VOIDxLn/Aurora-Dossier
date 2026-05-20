@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, View, Text, Platform } from 'react-native';
 
 import MenuBar from '../../components/MenuBar';
@@ -9,7 +10,13 @@ import WelcomeHeader from './components/WelcomeHeader';
 import MessageList from './components/MessageList';
 import ChatInputBar from './components/ChatInputBar';
 
+import { useFile } from './UploadFiles/hooks/useFile';
+import { FileSelectorBox } from './UploadFiles/components/FileSelectorBox';
+
 export default function CrearInformeScreen() {
+
+    const [fileInfo, setFileInfo] = useState(null);
+    const { handleSelectFile } = useFile();
 
     const { pront,
         bubbleMessage,
@@ -46,7 +53,8 @@ export default function CrearInformeScreen() {
 
                 <View style={{ alignItems: 'center' }}>
                     {/* INPUT */}
-                    <ChatInputBar translateInput={translateInput} pront={pront} setPront={setPront} send={send} />
+                    <ChatInputBar translateInput={translateInput} pront={pront} setPront={setPront} send={() => send(fileInfo, setFileInfo)}
+                    onSelectFile={() => handleSelectFile(setFileInfo)} fileInfo={fileInfo} setFileInfo={setFileInfo} />
                 </View>
 
             </View>
