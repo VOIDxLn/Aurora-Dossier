@@ -23,7 +23,8 @@ export default function CrearInformeScreen() {
         deleteTitle,
         createChat,
         setPront,
-        send } = useChatService();
+        send,
+        generatePdf } = useChatService();
 
     const { keyboardVisible,
         translateTittle,
@@ -49,7 +50,7 @@ export default function CrearInformeScreen() {
                 <WelcomeHeader deleteTitle={deleteTitle} translateTittle={translateTittle} />
 
                 {/* CHAT */}
-                <MessageList createChat={createChat} bubbleMessage={bubbleMessage} />
+                <MessageList createChat={createChat} bubbleMessage={bubbleMessage} generatePdf={generatePdf} />
 
                 <View style={{ alignItems: 'center' }}>
                     {/* INPUT */}

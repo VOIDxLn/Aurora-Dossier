@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 
 import { readFileFormatAI } from '../UploadFiles/hooks/readFileFormatAI';
+import { useGeneratedFileIa } from '../GeneratedFile/useGeneratedFileIa';
 
 export function useChatService() {
 
@@ -10,6 +11,9 @@ export function useChatService() {
         apiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
         temperature: 0.7,
     })
+
+    const { generatePdf } = useGeneratedFileIa();
+    const [lastAiResponse, setLastAiResponse] = useState("");
 
     // Pront message chat 
     const [pront, setPront] = useState("");
@@ -37,6 +41,7 @@ export function useChatService() {
             console.log("🚀 Generando formato estructurado...");
 
             const formattedMessage = readFileFormatAI(currentPront, fileInfo);
+            const weHadFile = !!fileInfo;
 
             setPront("");
             if (setFileInfo) setFileInfo(null);
@@ -49,12 +54,19 @@ export function useChatService() {
             let aiMessage = answer.content;
             const answerMessage = { author: 'ai', aiText: aiMessage }
 
+            setLastAiResponse(answerMessage.aiText); 
+
             setBubbleMessage(prevMessage => [
                 ...prevMessage,
-                { author: 'ai', value: answerMessage.aiText }
+                { author: 'ai', value: answerMessage.aiText, isPdfReport: weHadFile }
             ]);
 
             console.log(answerMessage.aiText)
+
+            if(weHadFile){
+                console.log("Generando reporte PDF del documento Analizado...");
+                await generatePdf(answerMessage.aiText);
+            }
         } catch (err) {
             console.log("Error en la respuesta de Aurora AI", err);
         }
@@ -66,7 +78,9 @@ export function useChatService() {
         bubbleMessage,
         deleteTitle,
         createChat,
+        lastAiResponse,
         setPront,
-        send
+        send,
+        generatePdf
     }
 }
