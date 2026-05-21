@@ -17,22 +17,53 @@ export default function LoginScreen({ navigation }) {
 
   async function handleLogin() {
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-      
-        if (error) {
-          Alert.alert("Correo o contraseña incorrectos");
-          return;
-        }
+      console.log(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-        navigation.navigate('CrearInforme');
-
-      } catch(error) {
-        Alert.alert("Algo salio mal.");
+      if (error) {
+        Alert.alert('Error', 'Correo o contraseña incorrectos.');
+        return;
       }
+
+      // Verificar si es un empleado — dos consultas separadas (más confiable que OR)
+      let { data: empleado } = await supabase
+        .from('empleados')
+        .select('activo')
+        .eq('auth_uid', data.user.id)
+        .maybeSingle();
+
+      if (!empleado) {
+        const { data: porEmail } = await supabase
+          .from('empleados')
+          .select('activo')
+          .eq('email', data.user.email)
+          .maybeSingle();
+        if (porEmail) empleado = porEmail;
+      }
+
+      if (empleado && !empleado.activo) {
+        await supabase.auth.signOut();
+        Alert.alert(
+          'Cuenta inactiva',
+          'Tu cuenta aún no ha sido activada. Contacta al administrador.'
+        );
+        return;
+      }
+
+      // Redirigir según el rol: empleados van a HomeEmpleado, admins a Home
+      if (empleado) {
+        navigation.navigate('HomeEmpleado');
+      } else {
+        navigation.navigate('Home');
+      }
+
+    } catch (error) {
+      Alert.alert('Error', 'Algo salió mal. Inténtalo de nuevo.');
     }
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}
@@ -44,7 +75,7 @@ export default function LoginScreen({ navigation }) {
       <Text style={{ fontSize: 32, fontWeight: "bold", color: "#2456ee", marginTop: 20, marginBottom: 50 }}>Iniciar Sesión</Text>
 
       <TextInputs placeholder="Correo electronico" value={email} keyboardType="email-address"
-       autoCorrect={false} autoCapitalize="none" onChangeText={setEmail} />
+        autoCorrect={false} autoCapitalize="none" onChangeText={setEmail} />
 
       <TextInputs security={true} placeholder="Contraseña" autoCorrect={false}
         value={password} autoCapitalize="none" onChangeText={setPassword} />
