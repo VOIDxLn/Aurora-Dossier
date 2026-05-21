@@ -32,12 +32,6 @@ export default function CrearInformeScreen() {
 
     return (
         <View style={styles.container}>
-            <DrawerMenu
-                visible={drawerVisible}
-                onClose={() => setDrawerVisible(false)}
-                navigation={navigation}
-            />
-
             <View style={{ alignItems: 'center', marginTop: 50, zIndex: 10 }}>
                 <View style={{ width: '90%' }}>
                     <MenuBar onPressMenu={() => setDrawerVisible(true)} />
