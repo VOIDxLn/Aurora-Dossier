@@ -17,7 +17,7 @@ import Logo from '../../components/Logo';
 import TextInputs from '../auth/components/TextInputs';
 
 export default function RegisterUsuarioScreen({ navigation, route }) {
-  const { nit, razonSocial, domicilio } = route.params;
+  const { nit, razonSocial, domicilio } = route.params || {};
 
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');

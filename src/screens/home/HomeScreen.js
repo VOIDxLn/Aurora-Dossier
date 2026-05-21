@@ -20,10 +20,10 @@ const NAV_CARDS = [
 ];
 
 const BOTTOM_NAV = [
-    { icon: 'account-outline', active: true  },
-    { icon: 'cog-outline',     active: false },
-    { icon: 'bell-outline',    active: false },
-    { icon: 'menu',            active: false },
+    { icon: 'account-outline', active: true,  route: 'Home' },
+    { icon: 'cog-outline',     active: false, route: 'Configuracion' },
+    { icon: 'bell-outline',    active: false, route: 'Novedades' },
+    { icon: 'folder-outline',  active: false, route: 'Carpetas' },
 ];
 
 export default function HomeScreen({ navigation }) {
@@ -111,7 +111,15 @@ export default function HomeScreen({ navigation }) {
             {/* Bottom Navigation */}
             <View style={styles.bottomNav}>
                 {BOTTOM_NAV.map((item, i) => (
-                    <TouchableOpacity key={i} style={styles.navItem}>
+                    <TouchableOpacity
+                        key={i}
+                        style={styles.navItem}
+                        onPress={() => {
+                            if (item.route) {
+                                navigation.navigate(item.route);
+                            }
+                        }}
+                    >
                         <MaterialCommunityIcons
                             name={item.icon}
                             size={28}

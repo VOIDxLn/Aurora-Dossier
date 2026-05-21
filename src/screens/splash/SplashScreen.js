@@ -37,13 +37,13 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         alignItems: 'center',
-        marginTop: 250,
+        justifyContent: 'center',
         backgroundColor: '#f3f4f6',
     },
     text: {
-        fontFamily: 'inter',
         fontSize: 32,
         fontWeight: 'bold',
         color: '#2456ee',
+        marginBottom: 20,
     },
 })

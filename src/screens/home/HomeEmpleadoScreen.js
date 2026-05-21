@@ -31,7 +31,7 @@ const CARDS = [
         icon: 'folder-open-outline',
         color: '#F59E0B',
         bg: '#FFFBEB',
-        route: 'Informes',
+        route: 'Carpetas',
     },
     {
         label: 'Pendientes',
@@ -47,7 +47,7 @@ const BOTTOM_NAV = [
     { icon: 'account-outline',    label: 'Perfil',         route: 'Configuracion' },
     { icon: 'cog-outline',        label: 'Configuración',  route: 'Configuracion' },
     { icon: 'bell-outline',       label: 'Notificaciones', route: null            },
-    { icon: 'folder-outline',     label: 'Archivos',       route: null            },
+    { icon: 'folder-outline',     label: 'Archivos',       route: 'Carpetas'      },
 ];
 
 /* ─── Card con animación de press ─── */

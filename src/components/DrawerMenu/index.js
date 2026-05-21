@@ -18,6 +18,7 @@ const ROL_LABEL = {
     empleado:   'Empleado',
 };
 
+<<<<<<< HEAD
 /* ─── Items del menú: se personalizan según el tipo de usuario ─── */
 const getMenuItems = (isAdmin) => [
     {
@@ -32,12 +33,20 @@ const getMenuItems = (isAdmin) => [
     },
     { label: 'Subscripcion',     icon: 'star-outline',   route: 'Suscripcion'  },
     { label: 'Configuracion',    icon: 'cog-outline',    route: 'Configuracion'},
+=======
+const MENU_ITEMS = [
+    { label: 'Home',          icon: 'home-outline',   route: 'Home'         },
+    { label: 'Editar datos',  icon: 'pencil-outline', route: 'EditarDatos'  },
+    { label: 'Subscripcion',  icon: 'star-outline',   route: 'Suscripcion'  },
+    { label: 'Configuracion', icon: 'cog-outline',    route: 'Configuracion'},
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
 ];
 
 export default function DrawerMenu({ visible, onClose, navigation }) {
     const { userData } = useUser();
     const slideAnim   = useRef(new Animated.Value(-(DRAWER_WIDTH + BTN_W))).current;
 
+<<<<<<< HEAD
     const isAdmin = userData?.tipo === 'admin';
     const MENU_ITEMS = getMenuItems(isAdmin);
 
@@ -45,6 +54,10 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
     useEffect(() => {
         if (visible) {
             // Siempre reinicia la posición antes de abrir para evitar glitches
+=======
+    useEffect(() => {
+        if (visible) {
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
             slideAnim.setValue(-(DRAWER_WIDTH + BTN_W));
             Animated.spring(slideAnim, {
                 toValue: 0,
@@ -55,7 +68,10 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
         }
     }, [visible]);
 
+<<<<<<< HEAD
     /* ── Cierre con animación ── */
+=======
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
     const handleClose = () => {
         Animated.timing(slideAnim, {
             toValue: -(DRAWER_WIDTH + BTN_W),
@@ -64,12 +80,16 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
         }).start(() => onClose());
     };
 
+<<<<<<< HEAD
     /* ── Navegación: cierra el drawer primero, luego navega ── */
+=======
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
     const handleNavigate = (route) => {
         handleClose();
         setTimeout(() => navigation.navigate(route), 240);
     };
 
+<<<<<<< HEAD
     /* ── Cerrar sesión ── */
     const handleLogout = async () => {
         handleClose();
@@ -81,6 +101,14 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
     };
 
     /* ── Datos del usuario a mostrar ── */
+=======
+    const handleLogout = async () => {
+        handleClose();
+        await supabase.auth.signOut();
+        setTimeout(() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }), 240);
+    };
+
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
     const nombre   = userData?.nombre ?? 'Usuario';
     const rolLabel = ROL_LABEL[userData?.rol] ?? userData?.rol ?? '';
     const email    = userData?.email ?? '';
@@ -88,12 +116,26 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
     return (
         <Modal transparent visible={visible} onRequestClose={handleClose} animationType="none">
             <View style={styles.overlay}>
+<<<<<<< HEAD
 
                 {/* Panel deslizante */}
                 <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}>
 
                     <View style={styles.drawerContent}>
                         {/* Cabecera con info del usuario */}
+=======
+                {/* Overlay oscuro de fondo */}
+                <TouchableOpacity
+                    style={StyleSheet.absoluteFillObject}
+                    onPress={handleClose}
+                    activeOpacity={1}
+                />
+
+                {/* Panel */}
+                <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}>
+                    <View style={styles.drawerContent}>
+                        {/* Cabecera */}
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
                         <View style={styles.drawerHeader}>
                             <MaterialCommunityIcons name="account-circle" size={80} color="#2456ee" />
                             <Text style={styles.userName} numberOfLines={2}>{nombre}</Text>
@@ -103,7 +145,11 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
                             <Text style={styles.userEmail} numberOfLines={1}>{email}</Text>
                         </View>
 
+<<<<<<< HEAD
                         {/* Lista de opciones */}
+=======
+                        {/* Opciones */}
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
                         <View style={styles.menuList}>
                             {MENU_ITEMS.map((item, i) => (
                                 <TouchableOpacity
@@ -113,7 +159,10 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
                                         i < MENU_ITEMS.length - 1 && styles.menuItemDivider,
                                     ]}
                                     onPress={() => handleNavigate(item.route)}
+<<<<<<< HEAD
                                     activeOpacity={0.6}
+=======
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
                                 >
                                     <MaterialCommunityIcons name={item.icon} size={24} color="#2456ee" />
                                     <Text style={styles.menuItemText}>{item.label}</Text>
@@ -122,16 +171,21 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
                         </View>
 
                         {/* Cerrar sesión */}
+<<<<<<< HEAD
                         <TouchableOpacity
                             style={styles.logoutBtn}
                             onPress={handleLogout}
                             activeOpacity={0.6}
                         >
+=======
+                        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
                             <MaterialCommunityIcons name="exit-to-app" size={24} color="#EF5350" />
                             <Text style={styles.logoutText}>Cerrar sesión</Text>
                         </TouchableOpacity>
                     </View>
 
+<<<<<<< HEAD
                     {/* Botón lateral "<" para cerrar */}
                     <TouchableOpacity style={styles.closeBtn} onPress={handleClose} activeOpacity={0.7}>
                         <MaterialCommunityIcons name="chevron-left" size={22} color="#5b5b5b" />
@@ -140,15 +194,35 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
 
                 {/* Área oscura — toca para cerrar */}
                 <TouchableOpacity style={{ flex: 1 }} onPress={handleClose} activeOpacity={1} />
+=======
+                    {/* Botón "<" lateral */}
+                    <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
+                        <MaterialCommunityIcons name="chevron-left" size={22} color="#5b5b5b" />
+                    </TouchableOpacity>
+                </Animated.View>
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
             </View>
         </Modal>
     );
 }
 
+<<<<<<< HEAD
 /* ─── Estilos (sin cambios visuales respecto al original) ─── */
 const styles = StyleSheet.create({
     overlay: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.45)' },
     drawer:  { flexDirection: 'row' },
+=======
+const styles = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+    drawer:  {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: DRAWER_WIDTH + BTN_W,
+        flexDirection: 'row',
+    },
+>>>>>>> 79781ae9b48d8e3b13eac0d40b6ad3cbe99d4116
 
     drawerContent: { width: DRAWER_WIDTH, backgroundColor: '#fff' },
 

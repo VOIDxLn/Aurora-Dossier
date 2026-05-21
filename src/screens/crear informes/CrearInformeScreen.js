@@ -31,14 +31,17 @@ export default function CrearInformeScreen() {
         translateInput } = useKeyboardAnimations();
 
     return (
-
         <View style={styles.container}>
+            <DrawerMenu
+                visible={drawerVisible}
+                onClose={() => setDrawerVisible(false)}
+                navigation={navigation}
+            />
 
             <View style={{ alignItems: 'center', marginTop: 50, zIndex: 10 }}>
                 <View style={{ width: '90%' }}>
-                    <MenuBar />
+                    <MenuBar onPressMenu={() => setDrawerVisible(true)} />
                 </View>
-
             </View>
 
             <View
@@ -57,8 +60,8 @@ export default function CrearInformeScreen() {
                     <ChatInputBar translateInput={translateInput} pront={pront} setPront={setPront} send={() => send(fileInfo, setFileInfo)}
                     onSelectFile={() => handleSelectFile(setFileInfo)} fileInfo={fileInfo} setFileInfo={setFileInfo} />
                 </View>
-
             </View>
+
             {!keyboardVisible && (
                 <View style={{ alignItems: 'center', marginBottom: 40 }}>
                     <View style={{ flexDirection: 'row', marginTop: 20 }}>
