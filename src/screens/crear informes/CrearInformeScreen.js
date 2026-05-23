@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View, Text, Platform } from 'react-native';
 
 import MenuBar from '../../components/MenuBar';
-import DrawerMenu from '../../components/DrawerMenu'; // Asegúrate de que este import exista si lo usas abajo
+import DrawerMenu from '../../components/DrawerMenu';
 
 import { useChatService } from './hooks/useChatService';
 import { useKeyboardAnimations } from './hooks/useKeyboardAnimations';
@@ -24,7 +24,8 @@ export default function CrearInformeScreen({ navigation }) {
         deleteTitle,
         createChat,
         setPront,
-        send } = useChatService();
+        send,
+        generatePdf } = useChatService();
 
     const { keyboardVisible,
         translateTittle,
@@ -32,37 +33,25 @@ export default function CrearInformeScreen({ navigation }) {
 
     return (
         <View style={styles.container}>
-            <DrawerMenu
-                visible={drawerVisible}
-                onClose={() => setDrawerVisible(false)}
-                navigation={navigation}
-            />
-
             <View style={{ alignItems: 'center', marginTop: 50, zIndex: 10 }}>
                 <View style={{ width: '90%' }}>
                     <MenuBar onPressMenu={() => setDrawerVisible(true)} />
                 </View>
             </View>
 
-            <View
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between' }}
-            >
-                {/* TITLE */}
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between' }}>
                 <WelcomeHeader deleteTitle={deleteTitle} translateTittle={translateTittle} />
-
-                {/* CHAT */}
-                <MessageList createChat={createChat} bubbleMessage={bubbleMessage} />
+                <MessageList createChat={createChat} bubbleMessage={bubbleMessage} generatePdf={generatePdf} />
 
                 <View style={{ alignItems: 'center' }}>
-                    {/* INPUT */}
-                    <ChatInputBar 
-                        translateInput={translateInput} 
-                        pront={pront} 
-                        setPront={setPront} 
+                    <ChatInputBar
+                        translateInput={translateInput}
+                        pront={pront}
+                        setPront={setPront}
                         send={() => send(fileInfo, setFileInfo)}
-                        onSelectFile={() => handleSelectFile(setFileInfo)} 
-                        fileInfo={fileInfo} 
-                        setFileInfo={setFileInfo} 
+                        onSelectFile={() => handleSelectFile(setFileInfo)}
+                        fileInfo={fileInfo}
+                        setFileInfo={setFileInfo}
                     />
                 </View>
             </View>
@@ -76,7 +65,7 @@ export default function CrearInformeScreen({ navigation }) {
                 </View>
             )}
         </View>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -94,4 +83,4 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'normal'
     }
-})
+});

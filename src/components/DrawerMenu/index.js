@@ -110,7 +110,6 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
                             <Text style={styles.logoutText}>Cerrar sesión</Text>
                         </TouchableOpacity>
                     </View>
-
                     {/* Botón "<" lateral */}
                     <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
                         <MaterialCommunityIcons name="chevron-left" size={22} color="#5b5b5b" />
