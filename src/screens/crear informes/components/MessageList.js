@@ -1,6 +1,6 @@
 import { TouchableOpacity, StyleSheet, ScrollView, View, Text } from 'react-native';
 
-export default function MessageList({ createChat, bubbleMessage, generatePdf }) {
+export default function MessageList({ createChat, bubbleMessage, generatePdf, deleteLoadingMessage, setDeleteLoadingMessage }) {
 
 
     return (
@@ -19,7 +19,8 @@ export default function MessageList({ createChat, bubbleMessage, generatePdf }) 
                                 backgroundColor: message.author === 'user' ? '#6cb1ff' : '#DFDFDF'
                             }}
                         >
-                            <Text>{message.value}</Text>
+                            {typeof message.value === 'string' ? 
+                            <Text>{message.value}</Text> : message.value}
 
                             {message.author === 'ai' && message.isPdfReport && (
                                 <TouchableOpacity

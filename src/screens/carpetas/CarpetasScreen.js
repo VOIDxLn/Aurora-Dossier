@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, StyleSheet, TextInput,
-    TouchableOpacity, FlatList, SafeAreaView,
+    TouchableOpacity, FlatList, 
     StatusBar, Alert, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Logo       from '../../components/Logo';

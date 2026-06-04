@@ -23,6 +23,8 @@ export default function CrearInformeScreen({ navigation }) {
         bubbleMessage,
         deleteTitle,
         createChat,
+        deleteLoadingMessage, 
+        setDeleteLoadingMessage,
         setPront,
         send,
         generatePdf } = useChatService();
@@ -41,7 +43,9 @@ export default function CrearInformeScreen({ navigation }) {
 
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between' }}>
                 <WelcomeHeader deleteTitle={deleteTitle} translateTittle={translateTittle} />
-                <MessageList createChat={createChat} bubbleMessage={bubbleMessage} generatePdf={generatePdf} />
+                <MessageList createChat={createChat} bubbleMessage={bubbleMessage} generatePdf={generatePdf} 
+                    deleteLoadingMessage={deleteLoadingMessage} setDeleteLoadingMessage={setDeleteLoadingMessage}
+                />
 
                 <View style={{ alignItems: 'center' }}>
                     <ChatInputBar

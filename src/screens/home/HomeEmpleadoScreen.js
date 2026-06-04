@@ -1,8 +1,8 @@
 import {
-    View, Text, StyleSheet, TextInput,
-    SafeAreaView, StatusBar, Pressable,
+    View, Text, StyleSheet, TextInput, StatusBar, Pressable,
     Animated, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useRef, useCallback } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 

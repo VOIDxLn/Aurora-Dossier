@@ -4,6 +4,8 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { readFileFormatAI } from '../UploadFiles/hooks/readFileFormatAI';
 import { useGeneratedFileIa } from '../GeneratedFile/useGeneratedFileIa';
 
+import LottieView from 'lottie-react-native';
+
 export function useChatService() {
 
     const auroraIA = new ChatGoogleGenerativeAI({
@@ -20,6 +22,7 @@ export function useChatService() {
     const [bubbleMessage, setBubbleMessage] = useState([{ value: "" }]);
     const [deleteTitle, setDeleteTitle] = useState(true);
     const [createChat, setCreateChat] = useState(false);
+    const [deleteLoadingMessage, setDeleteLoadingMessage] = useState(false);
 
     const send = async (fileInfo, setFileInfo) => {
 
@@ -31,10 +34,22 @@ export function useChatService() {
         const message = { author: 'user', messageText: pront };
 
         const currentPront = message.messageText;
+        const loadingMessage = <LottieView
+            source={require('../../../../assets/loading-message.json')}
+            autoPlay
+            loop
+            style={{
+                width: 40,
+                height: 20,
+                transform: [{ scale: 3 }],
+            }}
+            renderMode=""
+        />
 
         setBubbleMessage(prevMessage => [
             ...prevMessage,
-            { author: 'user', value: message.messageText }
+            { author: 'user', value: message.messageText },
+            { author: 'ai', value: loadingMessage }
         ]);
 
         try {
@@ -54,7 +69,7 @@ export function useChatService() {
             let aiMessage = answer.content;
             const answerMessage = { author: 'ai', aiText: aiMessage }
 
-            setLastAiResponse(answerMessage.aiText); 
+            setLastAiResponse(answerMessage.aiText);
 
             setBubbleMessage(prevMessage => [
                 ...prevMessage,
@@ -63,7 +78,7 @@ export function useChatService() {
 
             console.log(answerMessage.aiText)
 
-            if(weHadFile){
+            if (weHadFile) {
                 console.log("Generando reporte PDF del documento Analizado...");
                 await generatePdf(answerMessage.aiText);
             }
@@ -79,6 +94,8 @@ export function useChatService() {
         deleteTitle,
         createChat,
         lastAiResponse,
+        deleteLoadingMessage, 
+        setDeleteLoadingMessage,
         setPront,
         send,
         generatePdf
