@@ -6,7 +6,7 @@ export default function WelcomeHeader({ deleteTitle }) {
         <>
             {deleteTitle && (
                 <View style={{ marginTop: 120, width: '80%' }}>
-                    <Text style={styles.tittle}>¿Qué informe haremos hoy?</Text>
+                    <Text style={styles.tittle}>Para empezar, dame un titulo para este informe</Text>
                 </View>
             )}
         </>

@@ -16,6 +16,7 @@ import EditarDatos           from '../screens/EditarDatos';
 import SuscripcionScreen     from '../screens/suscripcion/SuscripcionScreen';
 import ConfiguracionScreen   from '../screens/configuracion/ConfiguracionScreen';
 import CarpetasScreen        from '../screens/carpetas/CarpetasScreen';
+import InformeDetalleScreen  from '../screens/informes/InformeDetalleScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,6 +42,7 @@ export default function Navigation() {
                 <Stack.Screen name='Suscripcion'     component={SuscripcionScreen} />
                 <Stack.Screen name='Configuracion'   component={ConfiguracionScreen} />
                 <Stack.Screen name='Carpetas'        component={CarpetasScreen} />
+                <Stack.Screen name='InformeDetalle'  component={InformeDetalleScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

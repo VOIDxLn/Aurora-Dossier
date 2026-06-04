@@ -1,8 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { supabase } from '../../../lib/supabase';
 
 import { readFileFormatAI } from '../UploadFiles/hooks/readFileFormatAI';
 import { useGeneratedFileIa } from '../GeneratedFile/useGeneratedFileIa';
+
+import LottieView from 'lottie-react-native';
+
+const PREGUNTAS = [
+    { campo: 'titulo',      pregunta: 'Para comenzar, dame un titulo para este informe.' },
+    { campo: 'actividad',   pregunta: 'Describe brevemente la actividad o evento a documentar.' },
+    { campo: 'responsable', pregunta: 'Quien realizo la actividad? (nombre o cargo)' },
+    { campo: 'fecha',       pregunta: 'Selecciona la fecha del evento:', esFecha: true },
+    { campo: 'detalles',    pregunta: 'Agrega los detalles, observaciones o resultados importantes.' },
+];
+
+const CAMPOS = ['titulo', 'actividad', 'responsable', 'fecha', 'detalles'];
 
 export function useChatService() {
 
@@ -10,68 +23,210 @@ export function useChatService() {
         model: 'gemini-2.5-flash',
         apiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
         temperature: 0.7,
-    })
+    });
 
     const { generatePdf } = useGeneratedFileIa();
-    const [lastAiResponse, setLastAiResponse] = useState("");
+    const [lastAiResponse, setLastAiResponse] = useState('');
+    const [userId, setUserId] = useState(null);
 
-    // Pront message chat 
-    const [pront, setPront] = useState("");
-    const [bubbleMessage, setBubbleMessage] = useState([{ value: "" }]);
+    const [etapaIndex, setEtapaIndex] = useState(0);
+    const [datosInforme, setDatosInforme] = useState({
+        titulo: '',
+        actividad: '',
+        responsable: '',
+        fecha: '',
+        detalles: '',
+    });
+
+    const [pront, setPront] = useState('');
+    const [bubbleMessage, setBubbleMessage] = useState([]);
     const [deleteTitle, setDeleteTitle] = useState(true);
     const [createChat, setCreateChat] = useState(false);
+    const [deleteLoadingMessage, setDeleteLoadingMessage] = useState(false);
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) setUserId(user.id);
+        };
+        getUser();
+
+        setBubbleMessage([]);
+        setCreateChat(true);
+    }, []);
+
+    const loadingMessage = (
+        <LottieView
+            source={require('../../../../assets/loading-message.json')}
+            autoPlay
+            loop
+            style={{
+                width: 40,
+                height: 20,
+                transform: [{ scale: 3 }],
+            }}
+            renderMode=""
+        />
+    );
 
     const send = async (fileInfo, setFileInfo) => {
+        if (pront.trim() === '' && !fileInfo) return;
 
+        if (fileInfo) {
+            const currentPront = pront;
+            setBubbleMessage(prev => [
+                ...prev,
+                { author: 'user', value: currentPront },
+                { author: 'ai', value: loadingMessage },
+            ]);
+            setPront('');
+            if (setFileInfo) setFileInfo(null);
 
-        if (pront.trim() === "" && !fileInfo) {
+            try {
+                const formattedMessage = readFileFormatAI(currentPront, fileInfo);
+                let answer = await auroraIA.invoke(formattedMessage);
+                let aiMessage = answer.content;
+
+                setLastAiResponse(aiMessage);
+                setBubbleMessage(prev => {
+                    const sinLoading = prev.slice(0, -1);
+                    return [...sinLoading, { author: 'ai', value: aiMessage, isPdfReport: true }];
+                });
+
+                const { data: { user } } = await supabase.auth.getUser();
+                const currentUserId = user?.id || userId;
+                if (currentUserId) {
+                    await supabase.from('informes').insert({
+                        user_id: currentUserId,
+                        titulo: 'Informe ' + new Date().toLocaleDateString(),
+                        informe_generado: aiMessage,
+                        estado: 'completado',
+                        created_at: new Date().toISOString(),
+                    });
+                }
+                await generatePdf(aiMessage, currentUserId);
+            } catch (err) {
+                console.log('Error en la respuesta de Aurora AI', err);
+                setBubbleMessage(prev => {
+                    const sinLoading = prev.slice(0, -1);
+                    return [...sinLoading, {
+                        author: 'ai',
+                        value: 'Ocurrio un error. Intenta de nuevo.',
+                        isPdfReport: false,
+                    }];
+                });
+            }
             return;
         }
 
-        const message = { author: 'user', messageText: pront };
+        const respuestaUsuario = pront.trim();
+        const campoActual = CAMPOS[etapaIndex];
 
-        const currentPront = message.messageText;
-
-        setBubbleMessage(prevMessage => [
-            ...prevMessage,
-            { author: 'user', value: message.messageText }
+        setBubbleMessage(prev => [
+            ...prev,
+            { author: 'user', value: respuestaUsuario },
+            { author: 'ai', value: loadingMessage },
         ]);
 
-        try {
-            console.log("🚀 Generando formato estructurado...");
+        setPront('');
+        setDeleteTitle(false);
+        setCreateChat(true);
 
-            const formattedMessage = readFileFormatAI(currentPront, fileInfo);
-            const weHadFile = !!fileInfo;
+        const nuevosDatos = { ...datosInforme, [campoActual]: respuestaUsuario };
+        setDatosInforme(nuevosDatos);
 
-            setPront("");
-            if (setFileInfo) setFileInfo(null);
-            setDeleteTitle(false);
-            setCreateChat(true);
+        const siguienteIndex = etapaIndex + 1;
 
-            console.log("📤 Enviando payload a Aurora AI...");
+        if (siguienteIndex < PREGUNTAS.length) {
+            setEtapaIndex(siguienteIndex);
+            setTimeout(() => {
+                const esFecha = CAMPOS[siguienteIndex] === 'fecha';
+                setBubbleMessage(prev => {
+                    const sinLoading = prev.slice(0, -1);
+                    return [...sinLoading, {
+                        author: 'ai',
+                        value: PREGUNTAS[siguienteIndex].pregunta,
+                        isPdfReport: false,
+                        isPicker: esFecha,
+                    }];
+                });
+            }, 500);
+        } else {
+            setTimeout(() => {
+                setBubbleMessage(prev => {
+                    const sinLoading = prev.slice(0, -1);
+                    return [...sinLoading, {
+                        author: 'ai',
+                        value: 'Generando tu informe...',
+                        isPdfReport: false,
+                    }];
+                });
+            }, 500);
 
-            let answer = await auroraIA.invoke(formattedMessage);
-            let aiMessage = answer.content;
-            const answerMessage = { author: 'ai', aiText: aiMessage }
+            try {
+                const prompt = `Genera un informe profesional estructurado con esta informacion.
+NO incluyas frases introductorias como "Aqui tienes" o "A continuacion" o similares.
+Comienza directamente con el informe.
 
-            setLastAiResponse(answerMessage.aiText); 
+Titulo: ${nuevosDatos.titulo}
+Actividad: ${nuevosDatos.actividad}
+Responsable: ${nuevosDatos.responsable}
+Fecha: ${nuevosDatos.fecha}
+Detalles: ${nuevosDatos.detalles}
 
-            setBubbleMessage(prevMessage => [
-                ...prevMessage,
-                { author: 'ai', value: answerMessage.aiText, isPdfReport: weHadFile }
-            ]);
+El informe debe tener: encabezado, introduccion, desarrollo, observaciones y conclusion.
+Usa un tono formal y profesional.
+Comienza directamente con el encabezado del informe sin ningun texto previo.`;
 
-            console.log(answerMessage.aiText)
+                const respuesta = await auroraIA.invoke([{ role: 'user', content: prompt }]);
+                const textoInforme = respuesta.content;
 
-            if(weHadFile){
-                console.log("Generando reporte PDF del documento Analizado...");
-                await generatePdf(answerMessage.aiText);
+                setLastAiResponse(textoInforme);
+                setBubbleMessage(prev => [...prev, {
+                    author: 'ai',
+                    value: textoInforme,
+                    isPdfReport: true,
+                }]);
+
+                const { data: { user } } = await supabase.auth.getUser();
+                const currentUserId = user?.id || userId;
+
+                if (currentUserId) {
+                    await supabase.from('informes').insert({
+                        user_id: currentUserId,
+                        titulo: nuevosDatos.titulo,
+                        informe_generado: textoInforme,
+                        estado: 'completado',
+                        created_at: new Date().toISOString(),
+                    });
+                }
+
+                await generatePdf(textoInforme, currentUserId);
+
+            } catch (err) {
+                console.log('Error generando informe:', err);
+                setBubbleMessage(prev => [...prev, {
+                    author: 'ai',
+                    value: 'Ocurrio un error generando el informe. Intenta de nuevo.',
+                    isPdfReport: false,
+                }]);
             }
-        } catch (err) {
-            console.log("Error en la respuesta de Aurora AI", err);
         }
+    };
 
-    }
+    const seleccionarFecha = (fecha) => {
+        const nuevosDatos = { ...datosInforme, fecha };
+        setDatosInforme(nuevosDatos);
+        setBubbleMessage(prev => [...prev, { author: 'user', value: fecha }]);
+        setEtapaIndex(4);
+        setTimeout(() => {
+            setBubbleMessage(prev => [...prev, {
+                author: 'ai',
+                value: PREGUNTAS[4].pregunta,
+                isPdfReport: false,
+            }]);
+        }, 500);
+    };
 
     return {
         pront,
@@ -79,8 +234,11 @@ export function useChatService() {
         deleteTitle,
         createChat,
         lastAiResponse,
+        deleteLoadingMessage,
+        setDeleteLoadingMessage,
         setPront,
         send,
-        generatePdf
-    }
+        seleccionarFecha,
+        generatePdf: (text) => generatePdf(text, userId),
+    };
 }

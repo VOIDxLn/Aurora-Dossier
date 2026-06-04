@@ -1,8 +1,9 @@
 import {
-    View, Text, StyleSheet, SafeAreaView, FlatList,
+    View, Text, StyleSheet, FlatList,
     TouchableOpacity, Alert, ActivityIndicator,
     Switch, RefreshControl, Modal, Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 

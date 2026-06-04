@@ -1,7 +1,9 @@
 import {
     View, Text, StyleSheet, TextInput,
-    SafeAreaView, StatusBar, ActivityIndicator, ScrollView, TouchableOpacity
+    TouchableOpacity, ScrollView,
+    StatusBar, ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
