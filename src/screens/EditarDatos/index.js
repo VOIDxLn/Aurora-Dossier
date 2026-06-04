@@ -7,7 +7,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Logo from '../../components/Logo';
 import DrawerMenu from '../../components/DrawerMenu';
-import { supabase } from '../../lib/supabase';
+import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 import { useUser } from '../../context/UserContext';
 
 /* ─── Pantalla de edición (Admin y Empleado) ─── */
@@ -50,23 +51,10 @@ export default function EditarDatos({ navigation }) {
     };
 
     const loadAdminData = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data: perfil, error: perfilError } = await supabase
-            .from('profiles')
-            .select('empresa_id')
-            .eq('id', user.id)
-            .single();
-
-        if (perfilError || !perfil?.empresa_id) {
-            // Admin sin empresa vinculada — no hay nada que cargar
-            return;
-        }
-
-        const { data: empresa, error: empresaError } = await supabase
-            .from('empresas')
-            .select('*')
-            .eq('id', perfil.empresa_id)
-            .single();
+        const { data: { user } } = await authService.getUser();
+        const result = await userService.fetchAdminProfileAndEmpresa(user.id);
+        if (!result) return;
+        const { empresa } = result;
 
         if (empresaError) throw empresaError;
 
@@ -121,7 +109,7 @@ export default function EditarDatos({ navigation }) {
 
             // Actualizar contraseña si se proporcionó
             if (password.length > 0) {
-                const { error: passError } = await supabase.auth.updateUser({ password });
+                const { error: passError } = await authService.updatePassword(password);
                 if (passError) throw passError;
             }
 
@@ -138,21 +126,14 @@ export default function EditarDatos({ navigation }) {
     };
 
     const saveAdminData = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data: perfil } = await supabase
-            .from('profiles')
-            .select('empresa_id')
-            .eq('id', user.id)
-            .single();
+        const { data: { user } } = await authService.getUser();
+        const { data: perfil } = await userService.fetchProfileByUid(user.id);
 
-        const { error } = await supabase
-            .from('empresas')
-            .update({
-                razon_social:     nombre.trim(),
-                domicilio_fiscal: domicilio.trim(),
-                correo:           correo.trim(),
-            })
-            .eq('id', perfil.empresa_id);
+        const { error } = await userService.updateEmpresaData(perfil.empresa_id, {
+            razon_social:     nombre.trim(),
+            domicilio_fiscal: domicilio.trim(),
+            correo:           correo.trim(),
+        });
 
         if (error) throw error;
     };
@@ -160,10 +141,7 @@ export default function EditarDatos({ navigation }) {
     const saveEmpleadoData = async () => {
         if (!userData?.id) throw new Error('No se encontró el registro del empleado.');
 
-        const { error } = await supabase
-            .from('empleados')
-            .update({ nombre: nombreEmp.trim() })
-            .eq('id', userData.id);
+        const { error } = await userService.updateEmpleado(userData.id, { nombre: nombreEmp.trim() });
 
         if (error) throw error;
     };

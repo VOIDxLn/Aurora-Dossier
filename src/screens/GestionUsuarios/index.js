@@ -9,7 +9,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Logo from '../../components/Logo';
 import DrawerMenu from '../../components/DrawerMenu';
 import NoAccess from '../../components/NoAccess';
-import { supabase } from '../../lib/supabase';
+import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 import { useUser } from '../../context/UserContext';
 
 const ROL_STYLE = {
@@ -39,14 +40,10 @@ export default function GestionUsuarios({ navigation }) {
 
     const cargarEmpleados = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            const { data: perfil } = await supabase
-                .from('profiles').select('empresa_id').eq('id', user.id).single();
+            const { data: { user } } = await authService.getUser();
+            const { data: perfil } = await userService.fetchProfileByUid(user.id);
 
-            const { data, error } = await supabase
-                .from('empleados').select('*')
-                .eq('empresa_id', perfil.empresa_id)
-                .order('created_at', { ascending: false });
+            const { data, error } = await userService.getEmpleados(perfil.empresa_id);
 
             if (error) throw error;
             setEmpleados(data ?? []);
@@ -63,7 +60,7 @@ export default function GestionUsuarios({ navigation }) {
     const toggleActivo = async (empleado) => {
         const nuevo = !empleado.activo;
         setEmpleados(prev => prev.map(e => e.id === empleado.id ? { ...e, activo: nuevo } : e));
-        const { error } = await supabase.from('empleados').update({ activo: nuevo }).eq('id', empleado.id);
+        const { error } = await userService.updateEmpleado(empleado.id, { activo: nuevo });
         if (error) {
             setEmpleados(prev => prev.map(e => e.id === empleado.id ? { ...e, activo: empleado.activo } : e));
             Alert.alert('Error', 'No se pudo actualizar el estado.');
@@ -79,8 +76,7 @@ export default function GestionUsuarios({ navigation }) {
         setEditingEmpleado(updated);
         setEmpleados(prev => prev.map(e => e.id === editingEmpleado.id ? updated : e));
 
-        const { error } = await supabase
-            .from('empleados').update({ permisos: nuevosPerms }).eq('id', editingEmpleado.id);
+        const { error } = await userService.updateEmpleado(editingEmpleado.id, { permisos: nuevosPerms });
         if (error) {
             // revert
             setEditingEmpleado(editingEmpleado);
@@ -98,7 +94,7 @@ export default function GestionUsuarios({ navigation }) {
                 {
                     text: 'Eliminar', style: 'destructive',
                     onPress: async () => {
-                        const { error } = await supabase.from('empleados').delete().eq('id', empleado.id);
+                        const { error } = await userService.deleteEmpleado(empleado.id);
                         if (!error) setEmpleados(prev => prev.filter(e => e.id !== empleado.id));
                         else Alert.alert('Error', 'No se pudo eliminar el usuario.');
                     },
