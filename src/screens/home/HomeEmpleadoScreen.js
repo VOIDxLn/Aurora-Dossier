@@ -24,7 +24,7 @@ const CARDS = [
         icon: 'paperclip',
         color: '#EF5350',
         bg: '#FFF5F5',
-        route: 'Informes',
+        route: 'Carpetas',
     },
     {
         label: 'Historial',
@@ -38,7 +38,7 @@ const CARDS = [
         icon: 'clipboard-list-outline',
         color: '#FF9800',
         bg: '#FFF8F0',
-        route: 'Informes',
+        route: 'Carpetas',
     },
 ];
 
