@@ -38,7 +38,7 @@ const CARDS = [
         icon: 'clipboard-list-outline',
         color: '#FF9800',
         bg: '#FFF8F0',
-        route: 'Carpetas',
+        route: 'Novedades',
     },
 ];
 
