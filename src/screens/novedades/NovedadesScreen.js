@@ -31,18 +31,41 @@ export default function NovedadesScreen({ navigation }) {
             if (!user) { setCargando(false); return; }
             setUserId(user.id);
 
+            // Intentar obtener de profiles (para administradores)
             const { data: perfil } = await supabase
                 .from('profiles')
                 .select('rol, empresa_id')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
 
-            setRol(perfil.rol);
-            setEmpresaId(perfil.empresa_id);
+            let userRol = perfil?.rol;
+            let userEmpresaId = perfil?.empresa_id;
 
-            const idEmpresa = perfil.empresa_id || ID_EMPRESA_PRUEBA;
+            // Si no se encuentra en profiles (o no tiene rol allí), buscar en empleados (para empleados)
+            if (!perfil || !perfil.rol) {
+                const { data: empleado } = await supabase
+                    .from('empleados')
+                    .select('rol, empresa_id')
+                    .eq('auth_uid', user.id)
+                    .maybeSingle();
 
-            if (perfil.rol === 'admin') {
+                if (empleado) {
+                    userRol = empleado.rol;
+                    userEmpresaId = empleado.empresa_id;
+                }
+            }
+
+            // Fallback en caso de que no se encuentre información
+            if (!userRol) {
+                userRol = 'empleado';
+            }
+
+            setRol(userRol);
+            setEmpresaId(userEmpresaId || ID_EMPRESA_PRUEBA);
+
+            const idEmpresa = userEmpresaId || ID_EMPRESA_PRUEBA;
+
+            if (userRol === 'admin') {
                 await cargarDatos(idEmpresa);
             } else {
                 await Promise.all([
