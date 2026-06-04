@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, Platform } from 'react-native';
+import { StyleSheet, View, Text, Platform, KeyboardAvoidingView } from 'react-native';
 
 import MenuBar from '../../components/MenuBar';
 import DrawerMenu from '../../components/DrawerMenu';
@@ -12,7 +12,6 @@ import MessageList from './components/MessageList';
 import ChatInputBar from './components/ChatInputBar';
 
 import { useFile } from './UploadFiles/hooks/useFile';
-import { FileSelectorBox } from './UploadFiles/components/FileSelectorBox';
 
 export default function CrearInformeScreen({ navigation }) {
     const [drawerVisible, setDrawerVisible] = useState(false);
@@ -29,27 +28,33 @@ export default function CrearInformeScreen({ navigation }) {
         send,
         generatePdf } = useChatService();
 
-    const { keyboardVisible,
-        translateTittle,
-        translateInput } = useKeyboardAnimations();
+    const { keyboardVisible } = useKeyboardAnimations();
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 100}
+        >
+            <DrawerMenu
+                visible={drawerVisible}
+                onClose={() => setDrawerVisible(false)}
+                navigation={navigation}
+            />
+
             <View style={{ alignItems: 'center', marginTop: 50, zIndex: 10 }}>
                 <View style={{ width: '90%' }}>
                     <MenuBar onPressMenu={() => setDrawerVisible(true)} />
                 </View>
             </View>
-
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between' }}>
                 <WelcomeHeader deleteTitle={deleteTitle} translateTittle={translateTittle} />
                 <MessageList createChat={createChat} bubbleMessage={bubbleMessage} generatePdf={generatePdf} 
                     deleteLoadingMessage={deleteLoadingMessage} setDeleteLoadingMessage={setDeleteLoadingMessage}
                 />
 
-                <View style={{ alignItems: 'center' }}>
+                <View style={{ alignItems: 'center', width: '90%', marginBottom: Platform.OS === 'ios' ? 20 : 15 }}>
                     <ChatInputBar
-                        translateInput={translateInput}
                         pront={pront}
                         setPront={setPront}
                         send={() => send(fileInfo, setFileInfo)}
@@ -68,7 +73,7 @@ export default function CrearInformeScreen({ navigation }) {
                     </View>
                 </View>
             )}
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 

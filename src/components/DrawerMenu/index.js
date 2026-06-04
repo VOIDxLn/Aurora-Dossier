@@ -51,7 +51,11 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
 
     const handleNavigate = (route) => {
         handleClose();
-        setTimeout(() => navigation.navigate(route), 240);
+        let targetRoute = route;
+        if (route === 'Home' && userData?.tipo === 'empleado') {
+            targetRoute = 'HomeEmpleado';
+        }
+        setTimeout(() => navigation.navigate(targetRoute), 240);
     };
 
     const handleLogout = async () => {

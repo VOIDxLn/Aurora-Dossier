@@ -12,7 +12,7 @@ import DrawerMenu from '../../components/DrawerMenu';
 import { useUser } from '../../context/UserContext';
 
 const NAV_CARDS = [
-    { label: 'Consultar\ninformes',  icon: 'file-document-outline',    color: '#EF5350', route: 'Informes',     permiso: 'ver_informes'   },
+    { label: 'Consultar\ninformes',  icon: 'file-document-outline',    color: '#EF5350', route: 'Carpetas',     permiso: 'ver_informes'   },
     { label: 'Consultar\nusuarios',  icon: 'account-group-outline',    color: '#4CAF50', route: 'Usuarios',     permiso: 'ver_usuarios'   },
     { label: 'Crear\nusuarios',      icon: 'account-plus-outline',     color: '#2456ee', route: 'CrearUsuario', permiso: 'crear_usuarios' },
     { label: 'Novedades',            icon: 'newspaper-variant-outline', color: '#F59E0B', route: 'Novedades',    permiso: 'ver_novedades'  },
