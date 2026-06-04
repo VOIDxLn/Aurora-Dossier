@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, Platform } from 'react-native';
+import { StyleSheet, View, Text, Platform, KeyboardAvoidingView } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import MenuBar from '../../components/MenuBar';
 import DrawerMenu from '../../components/DrawerMenu';
@@ -17,6 +18,10 @@ import { FileSelectorBox } from './UploadFiles/components/FileSelectorBox';
 export default function CrearInformeScreen({ navigation }) {
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [fileInfo, setFileInfo] = useState(null);
+    const [mostrarFecha, setMostrarFecha] = useState(false);
+    const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
+    const [mostrarDatePicker, setMostrarDatePicker] = useState(false);
+    const [fechaTemp, setFechaTemp] = useState(new Date());
     const { handleSelectFile } = useFile();
 
     const { pront,
@@ -25,14 +30,19 @@ export default function CrearInformeScreen({ navigation }) {
         createChat,
         setPront,
         send,
-        generatePdf } = useChatService();
+        generatePdf,
+        seleccionarFecha } = useChatService();
 
     const { keyboardVisible,
         translateTittle,
         translateInput } = useKeyboardAnimations();
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
             <View style={{ alignItems: 'center', marginTop: 50, zIndex: 10 }}>
                 <View style={{ width: '90%' }}>
                     <MenuBar onPressMenu={() => setDrawerVisible(true)} />
@@ -41,20 +51,64 @@ export default function CrearInformeScreen({ navigation }) {
 
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between' }}>
                 <WelcomeHeader deleteTitle={deleteTitle} translateTittle={translateTittle} />
-                <MessageList createChat={createChat} bubbleMessage={bubbleMessage} generatePdf={generatePdf} />
+                <MessageList
+                    createChat={createChat}
+                    bubbleMessage={bubbleMessage}
+                    generatePdf={generatePdf}
+                    onDateSelect={() => setMostrarDatePicker(true)}
+                />
 
-                <View style={{ alignItems: 'center' }}>
+                <View style={{ alignItems: 'center', width: '100%' }}>
+                    {mostrarFecha && (
+                        <DateTimePicker
+                            value={fechaSeleccionada}
+                            mode='date'
+                            display='default'
+                            onChange={(event, date) => {
+                                setMostrarFecha(false);
+                                if (date) {
+                                    setFechaSeleccionada(date);
+                                    const fechaFormateada = date.toLocaleDateString('es-CO', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    setPront(fechaFormateada);
+                                }
+                            }}
+                        />
+                    )}
                     <ChatInputBar
                         translateInput={translateInput}
                         pront={pront}
                         setPront={setPront}
                         send={() => send(fileInfo, setFileInfo)}
                         onSelectFile={() => handleSelectFile(setFileInfo)}
+                        onSelectFecha={() => setMostrarFecha(true)}
                         fileInfo={fileInfo}
                         setFileInfo={setFileInfo}
                     />
                 </View>
             </View>
+
+            {mostrarDatePicker && (
+                <DateTimePicker
+                    value={fechaTemp}
+                    mode='date'
+                    display='calendar'
+                    onChange={(event, date) => {
+                        setMostrarDatePicker(false);
+                        if (event.type === 'set' && date) {
+                            const fechaFormateada = date.toLocaleDateString('es-CO', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                            });
+                            seleccionarFecha(fechaFormateada);
+                        }
+                    }}
+                />
+            )}
 
             {!keyboardVisible && (
                 <View style={{ alignItems: 'center', marginBottom: 40 }}>
@@ -64,7 +118,7 @@ export default function CrearInformeScreen({ navigation }) {
                     </View>
                 </View>
             )}
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
