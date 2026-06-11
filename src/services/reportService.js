@@ -23,16 +23,31 @@ export const reportService = {
         // Garantizar que el perfil existe para cumplir la FK informes_user_id_fkey → profiles.id
         const { data: perfil } = await profileRepository.findByUid(authUserId);
         if (!perfil) {
-            // Buscar empleado por auth_uid primero; si es null (empleados antiguos), buscar por email
+            console.log('[reportService] sin profile para', authUserId, '— buscando empleado...');
+
             let { data: empleado } = await empleadoRepository.findByUid(authUserId);
+            console.log('[reportService] porUid:', empleado?.id ?? 'null');
+
             if (!empleado && user.email) {
                 const { data: porEmail } = await empleadoRepository.findByEmail(user.email);
+                console.log('[reportService] porEmail:', porEmail?.id ?? 'null', '| empresa_id:', porEmail?.empresa_id ?? 'null');
                 empleado = porEmail;
             }
+
             if (empleado?.empresa_id) {
-                await profileRepository.upsertProfile(authUserId, empleado.empresa_id, empleado.rol ?? 'empleado');
+                const { error: pErr } = await profileRepository.upsertProfile(
+                    authUserId,
+                    empleado.empresa_id,
+                    empleado.rol ?? 'empleado',
+                    empleado.email || user.email
+                );
+                if (pErr) {
+                    console.error('[reportService] upsertProfile FALLÓ:', pErr.message, '| code:', pErr.code);
+                } else {
+                    console.log('[reportService] profile creado OK para', authUserId);
+                }
             } else {
-                console.warn('reportService.save: sin empresa_id, no se pudo crear profile para', authUserId);
+                console.warn('[reportService] sin empresa_id — no se puede crear profile. empleado:', JSON.stringify(empleado));
             }
         }
 

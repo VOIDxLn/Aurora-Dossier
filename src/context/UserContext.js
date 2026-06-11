@@ -30,7 +30,10 @@ export function UserProvider({ children }) {
             if (empleado) {
                 setUserData(buildEmpleadoData(empleado));
                 if (empleado.empresa_id) {
-                    await profileService.ensureProfile(user.id, empleado.empresa_id, empleado.rol);
+                    // Fire-and-forget: el perfil estará listo antes de que el usuario
+                    // termine de responder las preguntas del informe.
+                    profileService.ensureProfile(user.id, empleado.empresa_id, empleado.rol, empleado.email)
+                        .catch(e => console.warn('ensureProfile:', e.message));
                 }
             } else {
                 const adminData = await profileService.getAdminUserData(user.id, user.email);

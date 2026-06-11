@@ -95,7 +95,7 @@ export default function CrearUsuario({ navigation }) {
 
             // Crear perfil para que la FK de informes se cumpla
             if (authData.user?.id) {
-                await profileService.ensureProfile(authData.user.id, perfil.empresa_id, rol);
+                await profileService.ensureProfile(authData.user.id, perfil.empresa_id, rol, email.trim().toLowerCase());
             }
 
             Alert.alert(

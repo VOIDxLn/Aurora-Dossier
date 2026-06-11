@@ -13,6 +13,9 @@ export const profileRepository = {
     findByEmpresaId: (empresaId) =>
         supabase.from('profiles').select('id').eq('empresa_id', empresaId),
 
-    upsertProfile: (uid, empresaId, rol) =>
-        supabase.from('profiles').upsert({ id: uid, empresa_id: empresaId, rol }, { onConflict: 'id' }),
+    upsertProfile: (uid, empresaId, rol, email) => {
+        const data = { id: uid, empresa_id: empresaId, rol };
+        if (email) data.email = email;
+        return supabase.from('profiles').upsert(data, { onConflict: 'id' });
+    },
 };
