@@ -39,7 +39,8 @@ export const reportService = {
                     authUserId,
                     empleado.empresa_id,
                     empleado.rol ?? 'empleado',
-                    empleado.email || user.email
+                    empleado.email || user.email,
+                    empleado.nombre
                 );
                 if (pErr) {
                     console.error('[reportService] upsertProfile FALLÓ:', pErr.message, '| code:', pErr.code);
