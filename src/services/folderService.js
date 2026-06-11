@@ -1,33 +1,11 @@
-import { supabase } from '../lib/supabase';
+import { folderRepository } from '../repositories/folderRepository';
 
 export const folderService = {
-    async obtenerCarpetas(sortLatest) {
-        return await supabase
-            .from('carpetas')
-            .select('id, nombre, created_at')
-            .order('created_at', { ascending: !sortLatest });
-    },
-
-    async obtenerArchivos(sortLatest) {
-        return await supabase
-            .from('archivos')
-            .select('id, nombre, created_at')
-            .order('created_at', { ascending: !sortLatest });
-    },
-
-    async eliminarCarpetas(ids) {
-        return await supabase
-            .from('carpetas')
-            .delete()
-            .in('id', ids);
-    },
-
-    async eliminarArchivos(ids) {
-        return await supabase
-            .from('archivos')
-            .delete()
-            .in('id', ids);
-    }
+    obtenerCarpetas: (sortLatest)           => folderRepository.findAllFolders(!sortLatest),
+    obtenerArchivos: (sortLatest, userIds)  => folderRepository.findAllFiles(!sortLatest, userIds),
+    crearCarpeta:    (nombre, empresaId)    => folderRepository.createFolder(nombre, empresaId),
+    eliminarCarpetas:(ids)                  => folderRepository.deleteFolders(ids),
+    eliminarArchivos:(ids)                  => folderRepository.deleteFiles(ids),
 };
 
 export default folderService;

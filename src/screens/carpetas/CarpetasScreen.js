@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, StyleSheet, TextInput,
-    TouchableOpacity, FlatList, 
+    TouchableOpacity, FlatList, Modal,
     StatusBar, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,8 +9,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Logo       from '../../components/Logo';
 import DrawerMenu from '../../components/DrawerMenu';
-import { folderService } from '../../services/folderService';
-import { useUser } from '../../context/UserContext';
+import { folderService }   from '../../services/folderService';
+import { authService }     from '../../services/authService';
+import { profileService }  from '../../services/profileService';
+import { empleadoService } from '../../services/empleadoService';
+import { useUser }         from '../../context/UserContext';
 
 export default function CarpetasScreen({ navigation }) {
     const { userData } = useUser();
@@ -24,19 +27,36 @@ export default function CarpetasScreen({ navigation }) {
     const [archivos, setArchivos]             = useState([]);
     const [loading, setLoading]               = useState(true);
     const [deleting, setDeleting]             = useState(false);
+    const [creando, setCreando]               = useState(false);
+    const [modalCarpeta, setModalCarpeta]     = useState(false);
+    const [nombreCarpeta, setNombreCarpeta]   = useState('');
 
     /* ── Cargar datos desde Supabase ── */
     const cargarDatos = useCallback(async () => {
-        if (!userData?.id && userData?.tipo !== 'admin') return;
+        if (!userData) return;
         setLoading(true);
         try {
+            const { data: { user } } = await authService.getUser();
+            if (!user) return;
+
+            // Construir lista de userIds para filtrar informes
+            let userIds = [user.id];
+            if (userData.tipo === 'admin') {
+                const empresaId = await profileService.getEmpresaIdByUser(user.id);
+                if (empresaId) {
+                    const { data: empleados } = await empleadoService.getAllByEmpresa(empresaId);
+                    const authUids = empleados?.map(e => e.auth_uid).filter(Boolean) ?? [];
+                    userIds = [...new Set([user.id, ...authUids])];
+                }
+            }
+
             // Carpetas
             const { data: dataCarpetas, error: errCarpetas } = await folderService.obtenerCarpetas(sortLatest);
 
             if (errCarpetas) throw errCarpetas;
 
-            // Archivos
-            const { data: dataArchivos, error: errArchivos } = await folderService.obtenerArchivos(sortLatest);
+            // Archivos (informes)
+            const { data: dataArchivos, error: errArchivos } = await folderService.obtenerArchivos(sortLatest, userIds);
 
             if (errArchivos) throw errArchivos;
 
@@ -113,6 +133,37 @@ export default function CarpetasScreen({ navigation }) {
                 },
             ]
         );
+    };
+
+    /* ── Crear carpeta ── */
+    const handleCrearCarpeta = () => {
+        setNombreCarpeta('');
+        setModalCarpeta(true);
+    };
+
+    const confirmarCrearCarpeta = async () => {
+        if (!nombreCarpeta.trim()) {
+            Alert.alert('Error', 'El nombre no puede estar vacío.');
+            return;
+        }
+        setCreando(true);
+        setModalCarpeta(false);
+        try {
+            let empresaId = userData?.empresa_id ?? null;
+            if (userData?.tipo === 'admin') {
+                const { data: { user } } = await authService.getUser();
+                empresaId = await profileService.getEmpresaIdByUser(user.id);
+            }
+            if (!empresaId) throw new Error('No se encontró la empresa asociada.');
+            const { error } = await folderService.crearCarpeta(nombreCarpeta.trim(), empresaId);
+            if (error) throw error;
+            await cargarDatos();
+            setActiveTab('carpetas');
+        } catch (e) {
+            Alert.alert('Error', 'No se pudo crear la carpeta: ' + e.message);
+        } finally {
+            setCreando(false);
+        }
     };
 
     /* ── Compartir ── */
@@ -267,6 +318,31 @@ export default function CarpetasScreen({ navigation }) {
                 )}
             </View>
 
+            {/* Modal crear carpeta */}
+            <Modal visible={modalCarpeta} transparent animationType="fade" onRequestClose={() => setModalCarpeta(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalTitle}>Nueva carpeta</Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder="Nombre de la carpeta"
+                            placeholderTextColor="#9CA3AF"
+                            value={nombreCarpeta}
+                            onChangeText={setNombreCarpeta}
+                            autoFocus
+                        />
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setModalCarpeta(false)}>
+                                <Text style={styles.modalBtnCancelText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.modalBtnConfirm} onPress={confirmarCrearCarpeta}>
+                                <Text style={styles.modalBtnConfirmText}>Crear</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             {/* Barra de acción inferior */}
             <View style={styles.bottomBar}>
                 <TouchableOpacity
@@ -286,8 +362,11 @@ export default function CarpetasScreen({ navigation }) {
                     <View style={styles.indicatorDot} />
                 </View>
 
-                <TouchableOpacity style={styles.bottomBarBtn}>
-                    <MaterialCommunityIcons name="folder" size={32} color="#2456ee" />
+                <TouchableOpacity style={styles.bottomBarBtn} onPress={handleCrearCarpeta} disabled={creando}>
+                    {creando
+                        ? <ActivityIndicator size="small" color="#2456ee" />
+                        : <MaterialCommunityIcons name="folder-plus" size={32} color="#2456ee" />
+                    }
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleShareSelected} style={styles.bottomBarBtn}>
@@ -372,4 +451,14 @@ const styles = StyleSheet.create({
     bottomBarBtn:   { padding: 10, alignItems: 'center', justifyContent: 'center' },
     pageIndicator:  { flexDirection: 'row', gap: 6, alignItems: 'center' },
     indicatorDot:   { width: 6, height: 6, borderRadius: 3, backgroundColor: '#2456ee' },
+
+    modalOverlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center' },
+    modalBox:       { width: '80%', backgroundColor: '#fff', borderRadius: 16, padding: 24, elevation: 10 },
+    modalTitle:     { fontSize: 18, fontWeight: 'bold', color: '#1A1A2E', marginBottom: 16 },
+    modalInput:     { borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 14, height: 48, fontSize: 15, color: '#1A1A2E', marginBottom: 20 },
+    modalButtons:   { flexDirection: 'row', gap: 12 },
+    modalBtnCancel: { flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1.5, borderColor: '#E5E7EB', alignItems: 'center' },
+    modalBtnCancelText: { color: '#5b5b5b', fontWeight: '600' },
+    modalBtnConfirm:    { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: '#2456ee', alignItems: 'center' },
+    modalBtnConfirmText:{ color: '#fff', fontWeight: 'bold' },
 });

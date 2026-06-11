@@ -1,175 +1,90 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  Image,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from 'react-native';
-import { authService } from '../../services/authService';
-import { userService } from '../../services/userService';
+import { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, ScrollView, Alert } from 'react-native';
 
-import Logo from '../../components/Logo';
+import { authService }    from '../../services/authService';
+import { empresaService } from '../../services/empresaService';
+import { profileService } from '../../services/profileService';
+import { COLORS } from '../../constants/colors';
+import { ROUTES } from '../../constants/routes';
+
+import Logo       from '../../components/Logo';
 import TextInputs from '../auth/components/TextInputs';
 
 export default function RegisterUsuarioScreen({ navigation, route }) {
-  const { nit, razonSocial, domicilio } = route.params || {};
+    const { nit, razonSocial, domicilio } = route.params || {};
 
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [confirmar, setConfirmar] = useState('');
-  const [cargando, setCargando] = useState(false);
+    const [correo,     setCorreo]     = useState('');
+    const [contrasena, setContrasena] = useState('');
+    const [confirmar,  setConfirmar]  = useState('');
+    const [cargando,   setCargando]   = useState(false);
 
-  const handleRegistro = async () => {
-    // Validaciones
-    if (!correo || !contrasena || !confirmar) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
-      return;
-    }
-    if (contrasena !== confirmar) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
-      return;
-    }
-    if (contrasena.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener mínimo 6 caracteres');
-      return;
-    }
+    const handleRegistro = async () => {
+        if (!correo || !contrasena || !confirmar) {
+            Alert.alert('Error', 'Por favor completa todos los campos');
+            return;
+        }
+        if (contrasena !== confirmar) {
+            Alert.alert('Error', 'Las contraseñas no coinciden');
+            return;
+        }
+        if (contrasena.length < 6) {
+            Alert.alert('Error', 'La contraseña debe tener mínimo 6 caracteres');
+            return;
+        }
 
-    setCargando(true);
+        setCargando(true);
+        try {
+            const { data: authData, error: authError } = await authService.signUp(correo, contrasena);
+            if (authError) throw authError;
 
-    try {
-      // Paso 1 — Crear usuario en Supabase Auth
-      const { data: authData, error: authError } = await authService.signUp(correo, contrasena);
+            const { data: empresa, error: empresaError } = await empresaService.create(nit, razonSocial, domicilio, correo);
+            if (empresaError) throw empresaError;
 
-      if (authError) throw authError;
+            const { error: perfilError } = await profileService.linkEmpresaToUser(authData.user.id, empresa.id, 'admin');
+            if (perfilError) throw perfilError;
 
-      // Paso 2 — Guardar empresa en la tabla 'empresas'
-      const { data: empresaData, error: empresaError } = await userService.createEmpresa(
-        nit,
-        razonSocial,
-        domicilio,
-        correo
-      );
+            Alert.alert(
+                '¡Registro exitoso!',
+                'Tu cuenta ha sido creada. Ya puedes iniciar sesión.',
+                [{ text: 'OK', onPress: () => navigation.navigate(ROUTES.LOGIN) }]
+            );
+        } catch (error) {
+            Alert.alert('Error', error.message);
+        } finally {
+            setCargando(false);
+        }
+    };
 
-      if (empresaError) throw empresaError;
+    return (
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+            <Logo width={80} height={80} />
+            <Text style={styles.titulo}>Crear cuenta</Text>
 
-      // Paso 3 — Actualizar el perfil con empresa_id y rol
-      const { error: perfilError } = await userService.updateProfileEmpresaAndRole(
-        authData.user.id,
-        empresaData.id,
-        'admin'
-      );
+            <TextInputs placeholder="Correo electrónico" keyboardType="email-address" value={correo}     onChangeText={setCorreo}     autoCapitalize="none" autoCorrect={false} />
+            <TextInputs placeholder="Contraseña"                                      value={contrasena} onChangeText={setContrasena} security autoCorrect={false} autoCapitalize="none" />
+            <TextInputs placeholder="Confirmar contraseña"                            value={confirmar}  onChangeText={setConfirmar}  security autoCorrect={false} autoCapitalize="none" />
 
-      if (perfilError) throw perfilError;
+            <Pressable
+                style={({ pressed }) => [styles.boton, pressed && styles.botonPressed, cargando && styles.botonDisabled]}
+                onPress={handleRegistro}
+                disabled={cargando}
+            >
+                <Text style={styles.botonTexto}>{cargando ? 'Registrando...' : 'Registrarse'}</Text>
+            </Pressable>
 
-      // ¡Éxito!
-      Alert.alert(
-        '¡Registro exitoso!',
-        'Tu cuenta ha sido creada. Ya puedes iniciar sesión.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-      );
-
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  return (
-    <ScrollView contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-
-      <Logo width={80} height={80} />
-
-      <Text style={styles.titulo}>Crear cuenta</Text>
-
-      <TextInputs
-        placeholder="Correo electrónico"
-        keyboardType="email-address"
-        value={correo}
-        onChangeText={setCorreo}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-
-      <TextInputs
-        placeholder="Contraseña"
-        keyboardType="default"
-        value={contrasena}
-        onChangeText={setContrasena}
-        security={true}
-        autoCorrect={false}
-        autoCapitalize="none"
-      />
-
-      <TextInputs
-        placeholder="Confirmar contraseña"
-        value={confirmar}
-        onChangeText={setConfirmar}
-        security={true}
-        autoCorrect={false}
-        autoCapitalize="none"
-      />
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.boton,
-          { backgroundColor: pressed ? '#6CB1FF' : '#2456EE' },
-          cargando && { backgroundColor: '#9CA3AF' },
-        ]}
-        onPress={handleRegistro}
-        disabled={cargando}
-      >
-        <Text style={styles.botonTexto}>
-          {cargando ? 'Registrando...' : 'Registrarse'}
-        </Text>
-      </Pressable>
-
-      <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
-        <Text style={styles.link}>← Volver</Text>
-      </Pressable>
-
-    </ScrollView>
-  );
+            <Pressable onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
+                <Text style={styles.link}>← Volver</Text>
+            </Pressable>
+        </ScrollView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 70,
-  },
-  titulo: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2456EE',
-    marginTop: 20,
-    marginBottom: 60,
-  },
-  boton: {
-    width: '80%',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  botonTexto: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  link: {
-    color: '#2456EE',
-    fontSize: 16,
-    marginTop: 5
-  },
+    container:     { flexGrow: 1, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center', marginBottom: 70 },
+    titulo:        { fontSize: 32, fontWeight: 'bold', color: COLORS.primary, marginTop: 20, marginBottom: 60 },
+    boton:         { width: '80%', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 60, backgroundColor: COLORS.primary },
+    botonPressed:  { backgroundColor: COLORS.primaryMuted },
+    botonDisabled: { backgroundColor: COLORS.textMuted },
+    botonTexto:    { color: '#fff', fontWeight: 'bold', fontSize: 18 },
+    link:          { color: COLORS.primary, fontSize: 16, marginTop: 5 },
 });

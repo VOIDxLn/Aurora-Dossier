@@ -1,64 +1,91 @@
-import { TouchableOpacity, StyleSheet, ScrollView, View, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, Text } from 'react-native';
 
 export default function MessageList({ createChat, bubbleMessage, generatePdf, deleteLoadingMessage, setDeleteLoadingMessage, onDateSelect }) {
-
     return (
-        <>
+        <View style={styles.container}>
             {createChat && (
-                <ScrollView style={{ width: '90%', marginBottom: 5 }}
-                    contentContainerStyle={{ gap: 5 }}>
-                    {bubbleMessage.map((message, index) => (
-                        message.value ?
-                            <View key={index}
-                                style={{
-                                    maxWidth: '80%',
-                                    borderRadius: 15,
-                                    padding: 10,
-                                    alignSelf: message.author === 'user' ? 'flex-end' : 'flex-start',
-                                    backgroundColor: message.author === 'user' ? '#6cb1ff' : '#DFDFDF'
-                                }}
+                <ScrollView
+                    style={styles.scroll}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {bubbleMessage.map((message, index) =>
+                        message.value ? (
+                            <View
+                                key={index}
+                                style={[
+                                    styles.bubble,
+                                    message.author === 'user' ? styles.bubbleUser : styles.bubbleAi,
+                                ]}
                             >
-                                {typeof message.value === 'string' ? 
-                                <Text>{message.value}</Text> : message.value}
+                                {typeof message.value === 'string'
+                                    ? <Text>{message.value}</Text>
+                                    : message.value
+                                }
 
                                 {message.isPicker && (
-                                    <View>
-                                        <TouchableOpacity
-                                            style={{
-                                                backgroundColor: '#2456ee',
-                                                padding: 12,
-                                                borderRadius: 8,
-                                                alignItems: 'center',
-                                                marginTop: 8,
-                                            }}
-                                            onPress={() => onDateSelect && onDateSelect('seleccionar')}
-                                        >
-                                            <Text style={{ color: 'white', fontWeight: 'bold' }}>
-                                                📅 Seleccionar fecha
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.dateBtn}
+                                        onPress={() => onDateSelect && onDateSelect('seleccionar')}
+                                    >
+                                        <Text style={styles.dateBtnText}>📅 Seleccionar fecha</Text>
+                                    </TouchableOpacity>
                                 )}
 
                                 {message.author === 'ai' && message.isPdfReport && (
                                     <TouchableOpacity
                                         style={styles.pdfButton}
                                         onPress={() => generatePdf(message.value)}
-                                        activateOpacity={0.7}
+                                        activeOpacity={0.7}
                                     >
                                         <Text style={styles.pdfButtonText}>📄 Exportar informe a PDF</Text>
                                     </TouchableOpacity>
                                 )}
                             </View>
-                            : null
-                    ))}
+                        ) : null
+                    )}
                 </ScrollView>
             )}
-        </>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        width: '90%',
+    },
+    scroll: {
+        flex: 1,
+    },
+    scrollContent: {
+        gap: 5,
+        paddingVertical: 8,
+    },
+    bubble: {
+        maxWidth: '80%',
+        borderRadius: 15,
+        padding: 10,
+    },
+    bubbleUser: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#6cb1ff',
+    },
+    bubbleAi: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#DFDFDF',
+    },
+    dateBtn: {
+        backgroundColor: '#2456ee',
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    dateBtnText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
     pdfButton: {
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
@@ -68,10 +95,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginTop: 8,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 1,
         elevation: 1,
     },
     pdfButtonText: {

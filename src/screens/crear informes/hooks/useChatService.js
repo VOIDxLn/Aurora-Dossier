@@ -1,244 +1,133 @@
-import { useEffect, useState } from 'react';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { supabase } from '../../../lib/supabase';
+import { useEffect, useState }  from 'react';
+import LottieView               from 'lottie-react-native';
 
-import { readFileFormatAI } from '../UploadFiles/hooks/readFileFormatAI';
-import { useGeneratedFileIa } from '../GeneratedFile/useGeneratedFileIa';
+import { authService }   from '../../../services/authService';
+import { aiService }     from '../../../services/aiService';
+import { pdfService }    from '../../../services/pdfService';
+import { reportService } from '../../../services/reportService';
 
-import LottieView from 'lottie-react-native';
+import { REPORT_QUESTIONS, REPORT_FIELDS } from '../../../constants/reportQuestions';
+import { useChatState }  from './useChatState';
 
-const PREGUNTAS = [
-    { campo: 'titulo',      pregunta: 'Para comenzar, dame un titulo para este informe.' },
-    { campo: 'actividad',   pregunta: 'Describe brevemente la actividad o evento a documentar.' },
-    { campo: 'responsable', pregunta: 'Quien realizo la actividad? (nombre o cargo)' },
-    { campo: 'fecha',       pregunta: 'Selecciona la fecha del evento:', esFecha: true },
-    { campo: 'detalles',    pregunta: 'Agrega los detalles, observaciones o resultados importantes.' },
-];
-
-const CAMPOS = ['titulo', 'actividad', 'responsable', 'fecha', 'detalles'];
+const LOADING_NODE = (
+    <LottieView
+        source={require('../../../../assets/loading-message.json')}
+        autoPlay
+        loop
+        style={{ width: 40, height: 20, transform: [{ scale: 3 }] }}
+        renderMode=""
+    />
+);
 
 export function useChatService() {
-
-    const auroraIA = new ChatGoogleGenerativeAI({
-        model: 'gemini-2.5-flash',
-        apiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
-        temperature: 0.7,
-    });
-
-    const { generatePdf } = useGeneratedFileIa();
-    const [lastAiResponse, setLastAiResponse] = useState('');
     const [userId, setUserId] = useState(null);
-
-    const [etapaIndex, setEtapaIndex] = useState(0);
-    const [datosInforme, setDatosInforme] = useState({
-        titulo: '',
-        actividad: '',
-        responsable: '',
-        fecha: '',
-        detalles: '',
-    });
-
-    const [pront, setPront] = useState('');
-    const [bubbleMessage, setBubbleMessage] = useState([]);
-    const [deleteTitle, setDeleteTitle] = useState(true);
-    const [createChat, setCreateChat] = useState(false);
-    const [deleteLoadingMessage, setDeleteLoadingMessage] = useState(false);
+    const state = useChatState();
 
     useEffect(() => {
-        const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+        authService.getUser().then(({ data: { user } }) => {
             if (user) setUserId(user.id);
-        };
-        getUser();
-
-        setBubbleMessage([]);
-        setCreateChat(true);
+        });
+        state.setCreateChat(true);
     }, []);
 
-    const loadingMessage = (
-        <LottieView
-            source={require('../../../../assets/loading-message.json')}
-            autoPlay
-            loop
-            style={{
-                width: 40,
-                height: 20,
-                transform: [{ scale: 3 }],
-            }}
-            renderMode=""
-        />
-    );
+    const generateAndSavePdf = async (texto, uid, titulo) => {
+        await reportService.save(uid, titulo, texto);
+        await pdfService.generateAndShare(texto);
+    };
 
-    const send = async (fileInfo, setFileInfo) => {
-        if (pront.trim() === '' && !fileInfo) return;
+    const sendWithFile = async (fileInfo, setFileInfo) => {
+        const currentPront = state.pront;
+        state.appendLoadingThenReplace({ author: 'user', value: currentPront }, LOADING_NODE);
+        state.setPront('');
+        if (setFileInfo) setFileInfo(null);
 
-        if (fileInfo) {
-            const currentPront = pront;
-            setBubbleMessage(prev => [
-                ...prev,
-                { author: 'user', value: currentPront },
-                { author: 'ai', value: loadingMessage },
-            ]);
-            setPront('');
-            if (setFileInfo) setFileInfo(null);
+        try {
+            const answer    = await aiService.invokeWithFile(currentPront, fileInfo);
+            const aiMessage = answer.content;
+            state.setLastAiResponse(aiMessage);
+            state.replaceLastMessage({ author: 'ai', value: aiMessage, isPdfReport: true });
 
-            try {
-                const formattedMessage = readFileFormatAI(currentPront, fileInfo);
-                let answer = await auroraIA.invoke(formattedMessage);
-                let aiMessage = answer.content;
-
-                setLastAiResponse(aiMessage);
-                setBubbleMessage(prev => {
-                    const sinLoading = prev.slice(0, -1);
-                    return [...sinLoading, { author: 'ai', value: aiMessage, isPdfReport: true }];
-                });
-
-                const { data: { user } } = await supabase.auth.getUser();
-                const currentUserId = user?.id || userId;
-                if (currentUserId) {
-                    await supabase.from('informes').insert({
-                        user_id: currentUserId,
-                        titulo: 'Informe ' + new Date().toLocaleDateString(),
-                        informe_generado: aiMessage,
-                        estado: 'completado',
-                        created_at: new Date().toISOString(),
-                    });
-                }
-                await generatePdf(aiMessage, currentUserId);
-            } catch (err) {
-                console.log('Error en la respuesta de Aurora AI', err);
-                setBubbleMessage(prev => {
-                    const sinLoading = prev.slice(0, -1);
-                    return [...sinLoading, {
-                        author: 'ai',
-                        value: 'Ocurrio un error. Intenta de nuevo.',
-                        isPdfReport: false,
-                    }];
-                });
-            }
-            return;
-        }
-
-        const respuestaUsuario = pront.trim();
-        const campoActual = CAMPOS[etapaIndex];
-
-        setBubbleMessage(prev => [
-            ...prev,
-            { author: 'user', value: respuestaUsuario },
-            { author: 'ai', value: loadingMessage },
-        ]);
-
-        setPront('');
-        setDeleteTitle(false);
-        setCreateChat(true);
-
-        const nuevosDatos = { ...datosInforme, [campoActual]: respuestaUsuario };
-        setDatosInforme(nuevosDatos);
-
-        const siguienteIndex = etapaIndex + 1;
-
-        if (siguienteIndex < PREGUNTAS.length) {
-            setEtapaIndex(siguienteIndex);
-            setTimeout(() => {
-                const esFecha = CAMPOS[siguienteIndex] === 'fecha';
-                setBubbleMessage(prev => {
-                    const sinLoading = prev.slice(0, -1);
-                    return [...sinLoading, {
-                        author: 'ai',
-                        value: PREGUNTAS[siguienteIndex].pregunta,
-                        isPdfReport: false,
-                        isPicker: esFecha,
-                    }];
-                });
-            }, 500);
-        } else {
-            setTimeout(() => {
-                setBubbleMessage(prev => {
-                    const sinLoading = prev.slice(0, -1);
-                    return [...sinLoading, {
-                        author: 'ai',
-                        value: 'Generando tu informe...',
-                        isPdfReport: false,
-                    }];
-                });
-            }, 500);
-
-            try {
-                const prompt = `Genera un informe profesional estructurado con esta informacion.
-NO incluyas frases introductorias como "Aqui tienes" o "A continuacion" o similares.
-Comienza directamente con el informe.
-
-Titulo: ${nuevosDatos.titulo}
-Actividad: ${nuevosDatos.actividad}
-Responsable: ${nuevosDatos.responsable}
-Fecha: ${nuevosDatos.fecha}
-Detalles: ${nuevosDatos.detalles}
-
-El informe debe tener: encabezado, introduccion, desarrollo, observaciones y conclusion.
-Usa un tono formal y profesional.
-Comienza directamente con el encabezado del informe sin ningun texto previo.`;
-
-                const respuesta = await auroraIA.invoke([{ role: 'user', content: prompt }]);
-                const textoInforme = respuesta.content;
-
-                setLastAiResponse(textoInforme);
-                setBubbleMessage(prev => [...prev, {
-                    author: 'ai',
-                    value: textoInforme,
-                    isPdfReport: true,
-                }]);
-
-                const { data: { user } } = await supabase.auth.getUser();
-                const currentUserId = user?.id || userId;
-
-                if (currentUserId) {
-                    await supabase.from('informes').insert({
-                        user_id: currentUserId,
-                        titulo: nuevosDatos.titulo,
-                        informe_generado: textoInforme,
-                        estado: 'completado',
-                        created_at: new Date().toISOString(),
-                    });
-                }
-
-                await generatePdf(textoInforme, currentUserId);
-
-            } catch (err) {
-                console.log('Error generando informe:', err);
-                setBubbleMessage(prev => [...prev, {
-                    author: 'ai',
-                    value: 'Ocurrio un error generando el informe. Intenta de nuevo.',
-                    isPdfReport: false,
-                }]);
-            }
+            const { data: { user } } = await authService.getUser();
+            const uid = user?.id || userId;
+            await generateAndSavePdf(aiMessage, uid, 'Informe ' + new Date().toLocaleDateString());
+        } catch (err) {
+            console.error('useChatService.sendWithFile:', err);
+            state.replaceLastMessage({ author: 'ai', value: 'Ocurrio un error. Intenta de nuevo.', isPdfReport: false });
         }
     };
 
-    const seleccionarFecha = (fecha) => {
-        const nuevosDatos = { ...datosInforme, fecha };
-        setDatosInforme(nuevosDatos);
-        setBubbleMessage(prev => [...prev, { author: 'user', value: fecha }]);
-        setEtapaIndex(4);
+    const sendConversational = async () => {
+        const respuestaUsuario = state.pront.trim();
+        const campoActual      = REPORT_FIELDS[state.etapaIndex];
+
+        state.appendLoadingThenReplace({ author: 'user', value: respuestaUsuario }, LOADING_NODE);
+        state.setPront('');
+        state.setDeleteTitle(false);
+        state.setCreateChat(true);
+
+        const nuevosDatos     = state.updateReportField(campoActual, respuestaUsuario);
+        const siguienteIndex  = state.etapaIndex + 1;
+
+        if (siguienteIndex < REPORT_QUESTIONS.length) {
+            state.setEtapaIndex(siguienteIndex);
+            setTimeout(() => {
+                const esFecha = REPORT_FIELDS[siguienteIndex] === 'fecha';
+                state.replaceLastMessage({
+                    author: 'ai',
+                    value:  REPORT_QUESTIONS[siguienteIndex].pregunta,
+                    isPdfReport: false,
+                    isPicker: esFecha,
+                });
+            }, 500);
+            return;
+        }
+
         setTimeout(() => {
-            setBubbleMessage(prev => [...prev, {
-                author: 'ai',
-                value: PREGUNTAS[4].pregunta,
-                isPdfReport: false,
-            }]);
+            state.replaceLastMessage({ author: 'ai', value: 'Generando tu informe...', isPdfReport: false });
+        }, 500);
+
+        try {
+            const iaResponse = await aiService.generateReport(nuevosDatos);
+            const texto      = iaResponse.content;
+
+            state.setLastAiResponse(texto);
+            state.appendMessage({ author: 'ai', value: texto, isPdfReport: true });
+
+            const { data: { user } } = await authService.getUser();
+            const uid = user?.id || userId;
+            await generateAndSavePdf(texto, uid, nuevosDatos.titulo);
+        } catch (err) {
+            console.error('useChatService.sendConversational:', err);
+            state.appendMessage({ author: 'ai', value: 'Ocurrio un error generando el informe. Intenta de nuevo.', isPdfReport: false });
+        }
+    };
+
+    const send = async (fileInfo, setFileInfo) => {
+        if (state.pront.trim() === '' && !fileInfo) return;
+        if (fileInfo) return sendWithFile(fileInfo, setFileInfo);
+        return sendConversational();
+    };
+
+    const seleccionarFecha = (fecha) => {
+        state.updateReportField('fecha', fecha);
+        state.appendMessage({ author: 'user', value: fecha });
+        state.setEtapaIndex(4);
+        setTimeout(() => {
+            state.appendMessage({ author: 'ai', value: REPORT_QUESTIONS[4].pregunta, isPdfReport: false });
         }, 500);
     };
 
     return {
-        pront,
-        bubbleMessage,
-        deleteTitle,
-        createChat,
-        lastAiResponse,
-        deleteLoadingMessage,
-        setDeleteLoadingMessage,
-        setPront,
+        pront:                state.pront,
+        bubbleMessage:        state.bubbleMessage,
+        deleteTitle:          state.deleteTitle,
+        createChat:           state.createChat,
+        lastAiResponse:       state.lastAiResponse,
+        deleteLoadingMessage: state.deleteLoadingMessage,
+        setDeleteLoadingMessage: state.setDeleteLoadingMessage,
+        setPront:             state.setPront,
         send,
         seleccionarFecha,
-        generatePdf: (text) => generatePdf(text, userId),
+        generatePdf:          (text) => pdfService.generateAndShare(text),
     };
 }

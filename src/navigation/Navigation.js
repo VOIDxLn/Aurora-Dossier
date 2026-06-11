@@ -1,5 +1,6 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer }     from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ROUTES } from '../constants/routes';
 
 import SplashScreen          from '../screens/splash/SplashScreen';
 import LoginScreen           from '../screens/auth/LoginScreen';
@@ -24,25 +25,25 @@ export default function Navigation() {
     return (
         <NavigationContainer>
             <Stack.Navigator
-                initialRouteName='Splash'
+                initialRouteName={ROUTES.SPLASH}
                 screenOptions={{ headerShown: false }}
             >
-                <Stack.Screen name='Splash'          component={SplashScreen} />
-                <Stack.Screen name='Login'           component={LoginScreen} />
-                <Stack.Screen name='Register'        component={RegisterEmpresaScreen} />
-                <Stack.Screen name='RegisterUsuario' component={RegisterUsuarioScreen} />
-                <Stack.Screen name='Home'            component={HomeScreen} />
-                <Stack.Screen name='CrearInforme'    component={CrearInformeScreen} />
-                <Stack.Screen name='Informes'        component={InformesScreen} />
-                <Stack.Screen name='Usuarios'        component={GestionUsuarios} />
-                <Stack.Screen name='CrearUsuario'    component={CrearUsuario} />
-                <Stack.Screen name='Novedades'       component={NovedadesScreen} />
-                <Stack.Screen name='Graficos'        component={GraficosScreen} />
-                <Stack.Screen name='EditarDatos'     component={EditarDatos} />
-                <Stack.Screen name='Suscripcion'     component={SuscripcionScreen} />
-                <Stack.Screen name='Configuracion'   component={ConfiguracionScreen} />
-                <Stack.Screen name='Carpetas'        component={CarpetasScreen} />
-                <Stack.Screen name='InformeDetalle'  component={InformeDetalleScreen} />
+                <Stack.Screen name={ROUTES.SPLASH}           component={SplashScreen}          />
+                <Stack.Screen name={ROUTES.LOGIN}            component={LoginScreen}            />
+                <Stack.Screen name={ROUTES.REGISTER}         component={RegisterEmpresaScreen}  />
+                <Stack.Screen name={ROUTES.REGISTER_USUARIO} component={RegisterUsuarioScreen}  />
+                <Stack.Screen name={ROUTES.HOME}             component={HomeScreen}             />
+                <Stack.Screen name={ROUTES.CREAR_INFORME}    component={CrearInformeScreen}     />
+                <Stack.Screen name={ROUTES.INFORMES}         component={InformesScreen}         />
+                <Stack.Screen name={ROUTES.USUARIOS}         component={GestionUsuarios}        />
+                <Stack.Screen name={ROUTES.CREAR_USUARIO}    component={CrearUsuario}           />
+                <Stack.Screen name={ROUTES.NOVEDADES}        component={NovedadesScreen}        />
+                <Stack.Screen name={ROUTES.GRAFICOS}         component={GraficosScreen}         />
+                <Stack.Screen name={ROUTES.EDITAR_DATOS}     component={EditarDatos}            />
+                <Stack.Screen name={ROUTES.SUSCRIPCION}      component={SuscripcionScreen}      />
+                <Stack.Screen name={ROUTES.CONFIGURACION}    component={ConfiguracionScreen}    />
+                <Stack.Screen name={ROUTES.CARPETAS}         component={CarpetasScreen}         />
+                <Stack.Screen name={ROUTES.INFORME_DETALLE}  component={InformeDetalleScreen}   />
             </Stack.Navigator>
         </NavigationContainer>
     );

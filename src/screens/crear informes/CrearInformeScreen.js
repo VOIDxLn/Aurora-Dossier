@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, Platform, KeyboardAvoidingView, Animated } from 'react-native';
+import { StyleSheet, View, Text, Platform, KeyboardAvoidingView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import MenuBar from '../../components/MenuBar';
@@ -23,24 +23,19 @@ export default function CrearInformeScreen({ navigation }) {
     const [fechaTemp, setFechaTemp] = useState(new Date());
     const { handleSelectFile } = useFile();
 
-    const { pront,
-        bubbleMessage,
-        deleteTitle,
-        createChat,
-        deleteLoadingMessage,
-        setDeleteLoadingMessage,
-        setPront,
-        send,
-        generatePdf,
-        seleccionarFecha } = useChatService();
+    const {
+        pront, bubbleMessage, deleteTitle, createChat,
+        deleteLoadingMessage, setDeleteLoadingMessage,
+        setPront, send, generatePdf, seleccionarFecha,
+    } = useChatService();
 
-    const { keyboardVisible, translateTittle, translateInput } = useKeyboardAnimations();
+    const { keyboardVisible } = useKeyboardAnimations();
 
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 100}
+            behavior='padding'
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
             <DrawerMenu
                 visible={drawerVisible}
@@ -48,13 +43,13 @@ export default function CrearInformeScreen({ navigation }) {
                 navigation={navigation}
             />
 
-            <View style={{ alignItems: 'center', marginTop: 50, zIndex: 10 }}>
-                <View style={{ width: '90%' }}>
-                    <MenuBar onPressMenu={() => setDrawerVisible(true)} />
-                </View>
+            <View style={styles.menuBarWrapper}>
+                <MenuBar onPressMenu={() => setDrawerVisible(true)} />
             </View>
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between' }}>
-                <WelcomeHeader deleteTitle={deleteTitle} translateTittle={translateTittle} />
+
+            <View style={styles.body}>
+                <WelcomeHeader deleteTitle={deleteTitle} />
+
                 <MessageList
                     createChat={createChat}
                     bubbleMessage={bubbleMessage}
@@ -64,7 +59,7 @@ export default function CrearInformeScreen({ navigation }) {
                     onDateSelect={() => setMostrarDatePicker(true)}
                 />
 
-                <Animated.View style={{ alignItems: 'center', width: '90%', marginBottom: 0, transform: [{ translateY: translateInput }] }}>
+                <View style={styles.inputWrapper}>
                     <ChatInputBar
                         pront={pront}
                         setPront={setPront}
@@ -74,8 +69,15 @@ export default function CrearInformeScreen({ navigation }) {
                         fileInfo={fileInfo}
                         setFileInfo={setFileInfo}
                     />
-                </Animated.View>
+                </View>
             </View>
+
+            {!keyboardVisible && (
+                <View style={styles.footer}>
+                    <Text style={styles.text}>Accede a más funcionalidades con </Text>
+                    <Text style={styles.link}>Aurora AI</Text>
+                </View>
+            )}
 
             {mostrarFecha && (
                 <DateTimePicker
@@ -86,12 +88,9 @@ export default function CrearInformeScreen({ navigation }) {
                         setMostrarFecha(false);
                         if (date) {
                             setFechaSeleccionada(date);
-                            const fechaFormateada = date.toLocaleDateString('es-CO', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                            });
-                            setPront(fechaFormateada);
+                            setPront(date.toLocaleDateString('es-CO', {
+                                year: 'numeric', month: 'long', day: 'numeric',
+                            }));
                         }
                     }}
                 />
@@ -105,24 +104,12 @@ export default function CrearInformeScreen({ navigation }) {
                     onChange={(event, date) => {
                         setMostrarDatePicker(false);
                         if (event.type === 'set' && date) {
-                            const fechaFormateada = date.toLocaleDateString('es-CO', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                            });
-                            seleccionarFecha(fechaFormateada);
+                            seleccionarFecha(date.toLocaleDateString('es-CO', {
+                                year: 'numeric', month: 'long', day: 'numeric',
+                            }));
                         }
                     }}
                 />
-            )}
-
-            {!keyboardVisible && (
-                <View style={{ alignItems: 'center', marginBottom: 40 }}>
-                    <View style={{ flexDirection: 'row', marginTop: 20 }}>
-                        <Text style={styles.text}>Accede a más funcionalidades con </Text>
-                        <Text style={styles.link}> Aurora AI</Text>
-                    </View>
-                </View>
             )}
         </KeyboardAvoidingView>
     );
@@ -133,14 +120,26 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f3f4f6',
     },
-    text: {
-        color: '#b1b1b1',
-        fontSize: 12,
-        fontWeight: 'light'
+    menuBarWrapper: {
+        alignItems: 'center',
+        marginTop: 50,
+        paddingHorizontal: '5%',
     },
-    link: {
-        color: '#2456ee',
-        fontSize: 12,
-        fontWeight: 'normal'
-    }
+    body: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    inputWrapper: {
+        width: '90%',
+        marginBottom: 12,
+    },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginBottom: 40,
+        marginTop: 20,
+    },
+    text: { color: '#b1b1b1', fontSize: 12 },
+    link: { color: '#2456ee', fontSize: 12 },
 });

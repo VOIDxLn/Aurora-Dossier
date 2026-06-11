@@ -10,8 +10,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Logo from '../../components/Logo';
 import DrawerMenu from '../../components/DrawerMenu';
 import NoAccess from '../../components/NoAccess';
-import { authService } from '../../services/authService';
-import { userService } from '../../services/userService';
+import { authService }    from '../../services/authService';
+import { profileService } from '../../services/profileService';
+import { userService }    from '../../services/userService';
 import { useUser } from '../../context/UserContext';
 
 const ROLES = [
@@ -91,6 +92,11 @@ export default function CrearUsuario({ navigation }) {
             });
 
             if (empError) throw empError;
+
+            // Crear perfil para que la FK de informes se cumpla
+            if (authData.user?.id) {
+                await profileService.ensureProfile(authData.user.id, perfil.empresa_id, rol);
+            }
 
             Alert.alert(
                 '¡Usuario creado!',

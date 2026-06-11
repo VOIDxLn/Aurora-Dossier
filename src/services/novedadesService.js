@@ -1,89 +1,50 @@
-import { supabase } from '../lib/supabase';
+import { novedadRepository } from '../repositories/novedadRepository';
 
 export const novedadesService = {
     async obtenerNovedades(empresaId) {
-        const { data, error } = await supabase
-            .from('novedades')
-            .select(`
-                *,
-                novedades_vistas (
-                    completada
-                )
-            `)
-            .eq('empresa_id', empresaId)
-            .order('created_at', { ascending: false });
-
+        const { data, error } = await novedadRepository.findAllByEmpresa(empresaId);
         if (error) {
-            console.error("Error al obtener:", error);
+            console.error('novedadesService.obtenerNovedades:', error);
             return [];
         }
         return data;
     },
 
     async crearNovedad(nuevaNovedad) {
-        const { data, error } = await supabase
-            .from('novedades')
-            .insert([{
-                titulo: nuevaNovedad.titulo,
-                descripcion: nuevaNovedad.descripcion,
-                tipo: nuevaNovedad.tipo.toLowerCase().trim(),
-                prioridad: nuevaNovedad.prioridad.toLowerCase().trim(),
-                empresa_id: nuevaNovedad.empresa_id,
-                creado_por: nuevaNovedad.creado_por
-            }]);
-        
+        const { error } = await novedadRepository.create(nuevaNovedad);
         if (error) throw error;
-        return data;
     },
 
     async obtenerPendientes(userId, empresaId) {
-        const [{ data: todasNovedades, error: errNovedades }, { data: vistas, error: errVistas }] = await Promise.all([
-            supabase.from('novedades').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
-            supabase.from('novedades_vistas').select('novedad_id').eq('empleado_id', userId).eq('completada', true),
-        ]);
+        const [{ data: todas, error: errTodas }, { data: vistas, error: errVistas }] =
+            await Promise.all([
+                novedadRepository.findPendingByEmpresa(empresaId),
+                novedadRepository.findCompletedIdsByUser(userId),
+            ]);
 
-        if (errNovedades) throw errNovedades;
+        if (errTodas)  throw errTodas;
         if (errVistas) throw errVistas;
 
-        const idsCompletadas = new Set((vistas || []).map(v => v.novedad_id));
-        return (todasNovedades || []).filter(n => !idsCompletadas.has(n.id));
+        const completadasIds = new Set((vistas ?? []).map(v => v.novedad_id));
+        return (todas ?? []).filter(n => !completadasIds.has(n.id));
     },
 
     async obtenerCompletadas(userId) {
-        const { data, error } = await supabase
-            .from('novedades_vistas')
-            .select('novedad_id, vista_at, novedades(*)')
-            .eq('empleado_id', userId)
-            .eq('completada', true);
-
+        const { data, error } = await novedadRepository.findCompletedByUser(userId);
         if (error) throw error;
-        return (data || []).map(v => ({ ...v.novedades, vista_at: v.vista_at }));
+        return (data ?? []).map(v => ({ ...v.novedades, vista_at: v.vista_at }));
     },
 
     async marcarComoVisto(novedadId, userId) {
-        const { data, error } = await supabase
-            .from('novedades_vistas')
-            .upsert({
-                novedad_id: novedadId,
-                empleado_id: userId,
-                completada: true,
-                vista_at: new Date().toISOString(),
-            }, { onConflict: 'novedad_id,empleado_id' });
-
+        const { error } = await novedadRepository.markAsViewed(novedadId, userId);
         if (error) throw error;
-        return data;
     },
 
     async obtenerVistasNovedad(novedadId) {
-        const { data, error } = await supabase
-            .from('novedades_vistas')
-            .select('empleado_id, vista_at, profiles(nombre, email)')
-            .eq('novedad_id', novedadId)
-            .eq('completada', true);
-
+        const { data, error } = await novedadRepository.findViewsByNovedad(novedadId);
         if (error) throw error;
-        return data || [];
-    }
+        return data ?? [];
+    },
 };
 
 export default novedadesService;

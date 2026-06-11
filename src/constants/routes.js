@@ -1,0 +1,18 @@
+export const ROUTES = {
+    SPLASH:           'Splash',
+    LOGIN:            'Login',
+    REGISTER:         'Register',
+    REGISTER_USUARIO: 'RegisterUsuario',
+    HOME:             'Home',
+    CREAR_INFORME:    'CrearInforme',
+    INFORMES:         'Informes',
+    INFORME_DETALLE:  'InformeDetalle',
+    USUARIOS:         'Usuarios',
+    CREAR_USUARIO:    'CrearUsuario',
+    NOVEDADES:        'Novedades',
+    GRAFICOS:         'Graficos',
+    EDITAR_DATOS:     'EditarDatos',
+    SUSCRIPCION:      'Suscripcion',
+    CONFIGURACION:    'Configuracion',
+    CARPETAS:         'Carpetas',
+};
