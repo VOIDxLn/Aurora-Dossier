@@ -9,7 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Logo       from '../../components/Logo';
 import DrawerMenu from '../../components/DrawerMenu';
-import { supabase } from '../../lib/supabase';
+import { folderService } from '../../services/folderService';
 import { useUser } from '../../context/UserContext';
 
 export default function CarpetasScreen({ navigation }) {
@@ -31,18 +31,12 @@ export default function CarpetasScreen({ navigation }) {
         setLoading(true);
         try {
             // Carpetas
-            const { data: dataCarpetas, error: errCarpetas } = await supabase
-                .from('carpetas')
-                .select('id, nombre, created_at')
-                .order('created_at', { ascending: !sortLatest });
+            const { data: dataCarpetas, error: errCarpetas } = await folderService.obtenerCarpetas(sortLatest);
 
             if (errCarpetas) throw errCarpetas;
 
             // Archivos
-            const { data: dataArchivos, error: errArchivos } = await supabase
-                .from('archivos')
-                .select('id, nombre, created_at')
-                .order('created_at', { ascending: !sortLatest });
+            const { data: dataArchivos, error: errArchivos } = await folderService.obtenerArchivos(sortLatest);
 
             if (errArchivos) throw errArchivos;
 
@@ -101,11 +95,9 @@ export default function CarpetasScreen({ navigation }) {
                     onPress: async () => {
                         setDeleting(true);
                         try {
-                            const tabla = activeTab === 'carpetas' ? 'carpetas' : 'archivos';
-                            const { error } = await supabase
-                                .from(tabla)
-                                .delete()
-                                .in('id', selectedItems);
+                            const { error } = activeTab === 'carpetas'
+                                ? await folderService.eliminarCarpetas(selectedItems)
+                                : await folderService.eliminarArchivos(selectedItems);
 
                             if (error) throw error;
 

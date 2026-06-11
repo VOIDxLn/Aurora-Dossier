@@ -5,7 +5,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { supabase } from '../../lib/supabase';
+import { authService } from '../../services/authService';
 import { useUser } from '../../context/UserContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -51,16 +51,12 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
 
     const handleNavigate = (route) => {
         handleClose();
-        let targetRoute = route;
-        if (route === 'Home' && userData?.tipo === 'empleado') {
-            targetRoute = 'HomeEmpleado';
-        }
-        setTimeout(() => navigation.navigate(targetRoute), 240);
+        setTimeout(() => navigation.navigate(route), 240);
     };
 
     const handleLogout = async () => {
         handleClose();
-        await supabase.auth.signOut();
+        await authService.logout();
         setTimeout(() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }), 240);
     };
 

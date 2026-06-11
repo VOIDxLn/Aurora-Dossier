@@ -10,8 +10,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Logo from '../../components/Logo';
 import DrawerMenu from '../../components/DrawerMenu';
 import NoAccess from '../../components/NoAccess';
-import { supabase } from '../../lib/supabase';
-import { supabaseNoSession } from '../../lib/supabaseNoSession';
+import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 import { useUser } from '../../context/UserContext';
 
 const ROLES = [
@@ -58,22 +58,18 @@ export default function CrearUsuario({ navigation }) {
         setLoading(true);
         try {
             // 1. Obtener empresa_id del admin logueado (CRITICO para el flujo)
-            const { data: { user: adminUser } } = await supabase.auth.getUser();
-            const { data: perfil, error: perfilError } = await supabase
-                .from('profiles')
-                .select('empresa_id')
-                .eq('id', adminUser.id)
-                .maybeSingle();
+            const { data: { user: adminUser } } = await authService.getUser();
+            const { data: perfil } = await userService.fetchProfileByUid(adminUser.id);
 
-            if (perfilError || !perfil?.empresa_id) {
+            if (!perfil?.empresa_id) {
                 throw new Error("No pudimos vincular al usuario con tu empresa. Verifica tu perfil de administrador.");
             }
 
             // 2. Crear cuenta en Supabase Auth
-            const { data: authData, error: authError } = await supabaseNoSession.auth.signUp({
-                email: email.trim().toLowerCase(),
-                password,
-            });
+            const { data: authData, error: authError } = await authService.signUpNoSession(
+                email.trim().toLowerCase(),
+                password
+            );
 
             if (authError) {
                 if (authError.message.includes('already registered')) {
@@ -83,7 +79,7 @@ export default function CrearUsuario({ navigation }) {
             }
 
             // 3. Guardar en la tabla 'empleados'
-            const { error: empError } = await supabase.from('empleados').insert([{
+            const { error: empError } = await userService.createEmpleado({
                 empresa_id:   perfil.empresa_id,
                 auth_uid:     authData.user?.id ?? null,
                 email:        email.trim().toLowerCase(),
@@ -92,7 +88,7 @@ export default function CrearUsuario({ navigation }) {
                 departamento: departamento.trim(),
                 rol,
                 activo:       false, // Se mantiene false por seguridad como pediste
-            }]);
+            });
 
             if (empError) throw empError;
 

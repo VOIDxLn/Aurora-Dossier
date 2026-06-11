@@ -8,7 +8,8 @@ import Icons from '../../components/Icons';
 import TextInputs from './components/TextInputs';
 
 
-import { supabase } from '../../lib/supabase';
+import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 
 export default function LoginScreen({ navigation }) {
 
@@ -18,34 +19,18 @@ export default function LoginScreen({ navigation }) {
   async function handleLogin() {
     try {
       console.log(email, password);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await authService.login(email, password);
 
       if (error) {
         Alert.alert('Error', 'Correo o contraseña incorrectos.');
         return;
       }
 
-      // Verificar si es un empleado — dos consultas separadas (más confiable que OR)
-      let { data: empleado } = await supabase
-        .from('empleados')
-        .select('activo')
-        .eq('auth_uid', data.user.id)
-        .maybeSingle();
-
-      if (!empleado) {
-        const { data: porEmail } = await supabase
-          .from('empleados')
-          .select('activo')
-          .eq('email', data.user.email)
-          .maybeSingle();
-        if (porEmail) empleado = porEmail;
-      }
+      // Verificar si es un empleado
+      const empleado = await userService.getEmpleadoData(data.user.id, data.user.email);
 
       if (empleado && !empleado.activo) {
-        await supabase.auth.signOut();
+        await authService.logout();
         Alert.alert(
           'Cuenta inactiva',
           'Tu cuenta aún no ha sido activada. Contacta al administrador.'
@@ -53,12 +38,8 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
-      // Redirigir según el rol: empleados van a HomeEmpleado, admins a Home
-      if (empleado) {
-        navigation.navigate('HomeEmpleado');
-      } else {
-        navigation.navigate('Home');
-      }
+      // Redirigir al Home único
+      navigation.navigate('Home');
 
     } catch (error) {
       Alert.alert('Error', 'Algo salió mal. Inténtalo de nuevo.');

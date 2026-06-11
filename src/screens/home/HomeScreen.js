@@ -1,7 +1,7 @@
 import {
     View, Text, StyleSheet, TextInput,
     TouchableOpacity, ScrollView,
-    StatusBar, ActivityIndicator,
+    StatusBar, ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
@@ -10,31 +10,14 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Logo from '../../components/Logo';
 import DrawerMenu from '../../components/DrawerMenu';
 import { useUser } from '../../context/UserContext';
-
-const NAV_CARDS = [
-    { label: 'Consultar\ninformes',  icon: 'file-document-outline',    color: '#EF5350', route: 'Carpetas',     permiso: 'ver_informes'   },
-    { label: 'Consultar\nusuarios',  icon: 'account-group-outline',    color: '#4CAF50', route: 'Usuarios',     permiso: 'ver_usuarios'   },
-    { label: 'Crear\nusuarios',      icon: 'account-plus-outline',     color: '#2456ee', route: 'CrearUsuario', permiso: 'crear_usuarios' },
-    { label: 'Novedades',            icon: 'newspaper-variant-outline', color: '#F59E0B', route: 'Novedades',    permiso: 'ver_novedades'  },
-    { label: 'Gráficos',             icon: 'chart-bar',                color: '#FF9800', route: 'Graficos',     permiso: 'ver_graficos'   },
-    { label: 'Crear\ninforme',       icon: 'file-plus-outline',        color: '#2456ee', route: 'CrearInforme', permiso: 'crear_informes' },
-];
-
-const BOTTOM_NAV = [
-    { icon: 'account-outline', active: true,  route: 'Home' },
-    { icon: 'cog-outline',     active: false, route: 'Configuracion' },
-    { icon: 'bell-outline',    active: false, route: 'Novedades' },
-    { icon: 'folder-outline',  active: false, route: 'Carpetas' },
-];
+import NavCard from '../../components/NavCard';
+import BottomNavItem from '../../components/BottomNavItem';
+import { MENU_CARDS, BOTTOM_NAV_CONFIG } from '../../config/navigationConfig';
 
 export default function HomeScreen({ navigation }) {
     const [drawerVisible, setDrawerVisible] = useState(false);
     const { userData, loading: userLoading } = useUser();
-
-    const isAdmin      = userData?.tipo === 'admin';
-    const visibleCards = NAV_CARDS.filter(card =>
-        isAdmin || userData?.permisos?.[card.permiso] === true
-    );
+    const [activeNav, setActiveNav] = useState(null);
 
     if (userLoading || !userData) {
         return (
@@ -43,6 +26,20 @@ export default function HomeScreen({ navigation }) {
             </SafeAreaView>
         );
     }
+
+    const userRole = userData.tipo || 'empleado';
+    const userPermisos = userData.permisos || {};
+
+    const visibleCards = MENU_CARDS.filter(card => {
+        if (!card.roles.includes(userRole)) return false;
+        if (userRole === 'admin') return true;
+        if (card.permiso) {
+            return userPermisos[card.permiso] === true;
+        }
+        return true;
+    });
+
+    const bottomNavItems = BOTTOM_NAV_CONFIG[userRole] || [];
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -68,11 +65,11 @@ export default function HomeScreen({ navigation }) {
                     </View>
                 </View>
 
-                {/* Saludo con nombre real */}
+                {/* Saludo */}
                 <Text style={styles.greeting}>
                     Hola, <Text style={styles.greetingHighlight}>{userData.nombre}</Text>
                 </Text>
-                <Text style={styles.subtitle}>Que deseas hacer?</Text>
+                <Text style={styles.subtitle}>¿Qué deseas hacer?</Text>
 
                 {/* Barra de búsqueda */}
                 <View style={styles.searchBar}>
@@ -84,7 +81,7 @@ export default function HomeScreen({ navigation }) {
                     <MaterialCommunityIcons name="magnify" size={22} color="#9CA3AF" />
                 </View>
 
-                {/* Grid filtrado por permisos */}
+                {/* Grid */}
                 {visibleCards.length === 0 ? (
                     <View style={styles.noAccessBox}>
                         <MaterialCommunityIcons name="lock-outline" size={48} color="#D1D5DB" />
@@ -95,15 +92,15 @@ export default function HomeScreen({ navigation }) {
                 ) : (
                     <View style={styles.grid}>
                         {visibleCards.map((card, i) => (
-                            <TouchableOpacity
+                            <NavCard
                                 key={i}
-                                style={styles.card}
-                                onPress={() => navigation.navigate(card.route)}
-                                activeOpacity={0.75}
-                            >
-                                <MaterialCommunityIcons name={card.icon} size={46} color={card.color} />
-                                <Text style={styles.cardLabel}>{card.label}</Text>
-                            </TouchableOpacity>
+                                card={card}
+                                onPress={() => {
+                                    if (card.route) {
+                                        navigation.navigate(card.route);
+                                    }
+                                }}
+                            />
                         ))}
                     </View>
                 )}
@@ -111,22 +108,18 @@ export default function HomeScreen({ navigation }) {
 
             {/* Bottom Navigation */}
             <View style={styles.bottomNav}>
-                {BOTTOM_NAV.map((item, i) => (
-                    <TouchableOpacity
+                {bottomNavItems.map((item, i) => (
+                    <BottomNavItem
                         key={i}
-                        style={styles.navItem}
+                        item={item}
+                        active={activeNav === i || (activeNav === null && item.route === 'Home')}
                         onPress={() => {
+                            setActiveNav(i);
                             if (item.route) {
                                 navigation.navigate(item.route);
                             }
                         }}
-                    >
-                        <MaterialCommunityIcons
-                            name={item.icon}
-                            size={28}
-                            color={item.active ? '#2456ee' : '#5b5b5b'}
-                        />
-                    </TouchableOpacity>
+                    />
                 ))}
             </View>
         </SafeAreaView>
@@ -154,22 +147,15 @@ const styles = StyleSheet.create({
 
     searchBar: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: '#FFFFFF', borderRadius: 10,
-        borderWidth: 1.5, borderColor: '#D1D5DB',
+        backgroundColor: '#FFFFFF', borderRadius: 12,
+        borderWidth: 1.5, borderColor: '#E5E7EB',
         paddingHorizontal: 14, height: 50, marginBottom: 24,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
     },
     searchInput: { flex: 1, fontSize: 15, color: '#1A1A2E' },
 
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-    card: {
-        width: '47.5%', backgroundColor: '#FFFFFF',
-        borderRadius: 16, borderWidth: 1.5, borderColor: '#E5E7EB',
-        alignItems: 'center', justifyContent: 'center',
-        paddingVertical: 22, paddingHorizontal: 10,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
-    },
-    cardLabel: { marginTop: 10, fontSize: 12, color: '#374151', textAlign: 'center', lineHeight: 18 },
 
     noAccessBox: { alignItems: 'center', marginTop: 60, gap: 12 },
     noAccessText: { fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 22 },
@@ -179,6 +165,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', backgroundColor: '#FFFFFF',
         borderTopWidth: 1, borderTopColor: '#E5E7EB',
         paddingTop: 12, paddingBottom: 28, paddingHorizontal: 20,
+        shadowColor: '#000', shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.06, shadowRadius: 8, elevation: 10,
     },
-    navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
