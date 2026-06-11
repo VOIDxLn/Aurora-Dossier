@@ -3,14 +3,14 @@ import { View, TextInput, TouchableOpacity } from 'react-native';
 import Icons from '../../../components/Icons';
 import { FileSelectorBox } from '../UploadFiles/components/FileSelectorBox';
 
-export default function ChatInputBar({ translateInput, pront, setPront, send, onSelectFile, onSelectFecha, fileInfo, setFileInfo }) {
-
+export default function ChatInputBar({ pront, setPront, send, onSelectFile, onSelectFecha, fileInfo, setFileInfo }) {
     return (
         <View style={{ width: '100%' }}>
+            {fileInfo && (
+                <FileSelectorBox fileInfo={fileInfo} setFileInfo={setFileInfo} />
+            )}
 
             <View style={styles.chatBar}>
-                <FileSelectorBox fileInfo={fileInfo} setFileInfo={setFileInfo} />
-
                 <TouchableOpacity onPress={onSelectFile}>
                     <Icons name='paperclip' size={22} color='#2456ee' />
                 </TouchableOpacity>
@@ -20,9 +20,12 @@ export default function ChatInputBar({ translateInput, pront, setPront, send, on
                 </TouchableOpacity>
 
                 <TextInput
-                    onChangeText={setPront} value={pront}
-                    placeholder='Creemos tu informe juntos' style={styles.textInput}>
-                </TextInput>
+                    value={pront}
+                    onChangeText={setPront}
+                    placeholder='Creemos tu informe juntos'
+                    placeholderTextColor='#9CA3AF'
+                    style={styles.textInput}
+                />
 
                 <TouchableOpacity onPress={send}>
                     <Icons name='send' size={24} color='#2456ee' />
@@ -53,4 +56,4 @@ const styles = {
         color: '#1a1a2e',
         paddingHorizontal: 4,
     },
-}
+};

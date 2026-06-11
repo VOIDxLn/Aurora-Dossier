@@ -3,7 +3,7 @@ import {
     ScrollView, TouchableOpacity, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import Logo from '../../components/Logo';
@@ -34,10 +34,27 @@ export default function EditarDatos({ navigation }) {
     // ── Campo compartido ──────────────────────────────────
     const [password, setPassword] = useState('');
 
-    useEffect(() => { loadData(); }, []);
-
     /* ── Carga de datos ─────────────────────────────────── */
-    const loadData = async () => {
+    const loadAdminData = useCallback(async () => {
+        const { data: { user } } = await authService.getUser();
+        const result = await userService.fetchAdminProfileAndEmpresa(user.id);
+        if (!result) return;
+        const { empresa } = result;
+
+        setNit(String(empresa.nit ?? ''));
+        setNombre(empresa.razon_social ?? '');
+        setDomicilio(empresa.domicilio_fiscal ?? '');
+        setCorreo(empresa.correo ?? '');
+    }, []);
+
+    const loadEmpleadoData = useCallback(async () => {
+        // Lee del contexto — evita re-fetch innecesario
+        setNombreEmp(userData?.nombre ?? '');
+        setEmailEmp(userData?.email ?? '');
+    }, [userData]);
+
+    const loadData = useCallback(async () => {
+        if (!userData) return;
         try {
             if (isAdmin) {
                 await loadAdminData();
@@ -49,27 +66,10 @@ export default function EditarDatos({ navigation }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [isAdmin, loadAdminData, loadEmpleadoData, userData]);
 
-    const loadAdminData = async () => {
-        const { data: { user } } = await authService.getUser();
-        const result = await userService.fetchAdminProfileAndEmpresa(user.id);
-        if (!result) return;
-        const { empresa } = result;
-
-        if (empresaError) throw empresaError;
-
-        setNit(String(empresa.nit ?? ''));
-        setNombre(empresa.razon_social ?? '');
-        setDomicilio(empresa.domicilio_fiscal ?? '');
-        setCorreo(empresa.correo ?? '');
-    };
-
-    const loadEmpleadoData = async () => {
-        // Usar los datos ya disponibles en el contexto — evita re-fetch innecesario
-        setNombreEmp(userData?.nombre ?? '');
-        setEmailEmp(userData?.email ?? '');
-    };
+    // Se ejecuta cuando el tipo de usuario queda disponible en el contexto
+    useEffect(() => { loadData(); }, [loadData]);
 
     /* ── Validaciones ───────────────────────────────────── */
     const validate = () => {
@@ -128,7 +128,10 @@ export default function EditarDatos({ navigation }) {
 
     const saveAdminData = async () => {
         const { data: { user } } = await authService.getUser();
-        const { data: perfil } = await userService.fetchProfileByUid(user.id);
+        const { data: perfil, error: perfilError } = await userService.fetchProfileByUid(user.id);
+
+        if (perfilError) throw perfilError;
+        if (!perfil?.empresa_id) throw new Error('No se encontró la empresa asociada al perfil.');
 
         const { error } = await userService.updateEmpresaData(perfil.empresa_id, {
             razon_social:     nombre.trim(),

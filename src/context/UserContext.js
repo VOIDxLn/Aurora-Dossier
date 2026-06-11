@@ -1,33 +1,42 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/authService';
-import { userService } from '../services/userService';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { authService }    from '../services/authService';
+import { empleadoService } from '../services/empleadoService';
+import { profileService }  from '../services/profileService';
 
 const UserContext = createContext(null);
 
+const buildEmpleadoData = (empleado) => ({
+    tipo:       'empleado',
+    nombre:     empleado.nombre,
+    email:      empleado.email,
+    rol:        empleado.rol,
+    permisos:   empleado.permisos ?? {},
+    activo:     empleado.activo,
+    id:         empleado.id,
+    empresa_id: empleado.empresa_id,
+});
+
 export function UserProvider({ children }) {
     const [userData, setUserData] = useState(null);
-    const [loading, setLoading]   = useState(true);
+    const [loading,  setLoading]  = useState(true);
 
-    const loadUser = async () => {
+    const loadUser = useCallback(async () => {
         setLoading(true);
         try {
             const { data: { user }, error } = await authService.getUser();
             if (error || !user) { setUserData(null); return; }
 
-            const empleado = await userService.getEmpleadoData(user.id, user.email);
-
+            const empleado = await empleadoService.resolveByAuth(user.id, user.email);
             if (empleado) {
-                setUserData({
-                    tipo:     'empleado',
-                    nombre:   empleado.nombre,
-                    email:    empleado.email,
-                    rol:      empleado.rol,
-                    permisos: empleado.permisos ?? {},
-                    activo:   empleado.activo,
-                    id:       empleado.id,
-                });
+                setUserData(buildEmpleadoData(empleado));
+                if (empleado.empresa_id) {
+                    // Fire-and-forget: el perfil estará listo antes de que el usuario
+                    // termine de responder las preguntas del informe.
+                    profileService.ensureProfile(user.id, empleado.empresa_id, empleado.rol, empleado.email)
+                        .catch(e => console.warn('ensureProfile:', e.message));
+                }
             } else {
-                const adminData = await userService.getAdminData(user.id, user.email);
+                const adminData = await profileService.getAdminUserData(user.id, user.email);
                 setUserData(adminData);
             }
         } catch (e) {
@@ -36,7 +45,7 @@ export function UserProvider({ children }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         loadUser();
@@ -47,7 +56,7 @@ export function UserProvider({ children }) {
         });
 
         return () => subscription.unsubscribe();
-    }, []);
+    }, [loadUser]);
 
     return (
         <UserContext.Provider value={{ userData, loading, refreshUser: loadUser }}>

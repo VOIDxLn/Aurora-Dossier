@@ -1,6 +1,7 @@
 import { StyleSheet, Pressable, Animated } from 'react-native';
 import { useRef } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { COLORS } from '../constants/colors';
 
 export default function BottomNavItem({ item, active, onPress }) {
     const scale = useRef(new Animated.Value(1)).current;
@@ -19,7 +20,7 @@ export default function BottomNavItem({ item, active, onPress }) {
                 <MaterialCommunityIcons
                     name={item.icon}
                     size={26}
-                    color={active ? '#2456ee' : '#9CA3AF'}
+                    color={active ? COLORS.primary : COLORS.textMuted}
                 />
             </Animated.View>
         </Pressable>
@@ -27,9 +28,5 @@ export default function BottomNavItem({ item, active, onPress }) {
 }
 
 const styles = StyleSheet.create({
-    navItem: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
+    navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

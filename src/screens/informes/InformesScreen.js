@@ -1,112 +1,188 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet,
-   ActivityIndicator, Alert } from 'react-native';
+import { useState } from 'react';
+import {
+    View, Text, FlatList, TouchableOpacity,
+    StyleSheet, ActivityIndicator, TextInput, RefreshControl,
+} from 'react-native';
+import { SafeAreaView }           from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
+import { useFocusEffect }         from '@react-navigation/native';
+import { useCallback }            from 'react';
+
+import Logo       from '../../components/Logo';
+import DrawerMenu from '../../components/DrawerMenu';
+import { useInformes } from './hooks/useInformes';
+import { COLORS } from '../../constants/colors';
+import { ROUTES }  from '../../constants/routes';
 
 export default function InformesScreen({ navigation }) {
-  const [informes, setInformes] = useState([]);
-  const [cargando, setCargando] = useState(true);
+    const [drawerVisible, setDrawerVisible] = useState(false);
+    const [busqueda,      setBusqueda]      = useState('');
 
-  useEffect(() => {
-    cargarInformes();
-  }, []);
+    const { informes, cargando, refreshing, cargar, eliminar } = useInformes();
 
-  const cargarInformes = async () => {
-    setCargando(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setCargando(false); return; }
+    useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
-    const { data, error } = await supabase
-      .from('informes')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    const informesFiltrados = informes.filter(i =>
+        i.titulo?.toLowerCase().includes(busqueda.toLowerCase())
+    );
 
-    if (error) Alert.alert('Error', error.message);
-    else setInformes(data || []);
-    setCargando(false);
-  };
+    const formatFecha = (iso) => {
+        if (!iso) return '';
+        return new Date(iso).toLocaleDateString('es-CO', {
+            day: '2-digit', month: 'long', year: 'numeric',
+        });
+    };
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons name='arrow-left' size={26} color='#5b5b5b' />
-        </TouchableOpacity>
-        <Text style={styles.titulo}>Mis Informes</Text>
-        <View style={{ width: 26 }} />
-      </View>
-
-      {cargando ? (
-        <ActivityIndicator size='large' color='#2456ee' style={{ marginTop: 50 }} />
-      ) : (
-        <FlatList
-          data={informes}
-          contentContainerStyle={{ padding: 20 }}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={() => (
-            <View style={styles.vacio}>
-              <MaterialCommunityIcons name='file-document-outline' size={72} color='#ccc' />
-              <Text style={styles.vacioTexto}>No tienes informes aún</Text>
-              <TouchableOpacity
-                style={styles.btnCrear}
-                onPress={() => navigation.navigate('CrearInforme')}
-              >
-                <Text style={styles.btnCrearTexto}>Crear mi primer informe</Text>
-              </TouchableOpacity>
+    const renderItem = ({ item }) => (
+        <View style={styles.row}>
+            <View style={styles.rowIcon}>
+                <MaterialCommunityIcons name="file-pdf-box" size={36} color="#EF5350" />
             </View>
-          )}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('InformeDetalle', { informe: item })}>
-              <View style={styles.cardHeader}>
-                <MaterialCommunityIcons name='file-document' size={22} color='#2456ee' />
-                <Text style={styles.cardTitulo} numberOfLines={1}>{item.titulo}</Text>
-              </View>
-              {item.resumen ? (
-                <Text style={styles.cardResumen} numberOfLines={2}>{item.resumen}</Text>
-              ) : (
-                <Text style={styles.cardResumen} numberOfLines={3}>{item.informe_generado}</Text>
-              )}
-              <View style={styles.cardFooter}>
-                <View style={[styles.badge, { backgroundColor: item.estado === 'completado' ? '#DCFCE7' : '#FEF9C3' }]}>
-                  <Text style={{ fontSize: 10, fontWeight: 'bold', color: item.estado === 'completado' ? '#16A34A' : '#CA8A04' }}>
-                    {item.estado?.toUpperCase() || 'BORRADOR'}
-                  </Text>
-                </View>
-                <Text style={styles.cardFecha}>
-                  {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
-                </Text>
-              </View>
+            <View style={styles.rowContent}>
+                <Text style={styles.rowTitle} numberOfLines={1}>{item.titulo}</Text>
+                <Text style={styles.rowDate}>{formatFecha(item.created_at)}</Text>
+            </View>
+            <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => navigation.navigate(ROUTES.INFORME_DETALLE, { informe: item })}
+            >
+                <MaterialCommunityIcons name="pencil-outline" size={22} color={COLORS.primary} />
             </TouchableOpacity>
-          )}
-        />
-      )}
-    </SafeAreaView>
-  );
+            <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => eliminar(item)}
+            >
+                <MaterialCommunityIcons name="trash-can-outline" size={22} color="#EF5350" />
+            </TouchableOpacity>
+        </View>
+    );
+
+    return (
+        <SafeAreaView style={styles.safeArea}>
+            <DrawerMenu
+                visible={drawerVisible}
+                onClose={() => setDrawerVisible(false)}
+                navigation={navigation}
+            />
+
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => setDrawerVisible(true)}>
+                    <MaterialCommunityIcons name="menu" size={40} color={COLORS.textLight} />
+                </TouchableOpacity>
+                <View style={styles.logoWrapper}>
+                    <Logo width={38} height={38} />
+                </View>
+            </View>
+
+            <View style={styles.titleRow}>
+                <Text style={styles.pageTitle}>Gestionar informes</Text>
+                <TouchableOpacity
+                    style={styles.addBtn}
+                    onPress={() => navigation.navigate(ROUTES.CREAR_INFORME)}
+                >
+                    <MaterialCommunityIcons name="plus" size={22} color="#fff" />
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.searchBar}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Buscar"
+                    placeholderTextColor="#9CA3AF"
+                    value={busqueda}
+                    onChangeText={setBusqueda}
+                />
+                <MaterialCommunityIcons name="magnify" size={22} color="#9CA3AF" />
+            </View>
+
+            {cargando ? (
+                <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+            ) : (
+                <FlatList
+                    data={informesFiltrados}
+                    keyExtractor={item => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.list}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={() => cargar(true)}
+                            colors={[COLORS.primary]}
+                            tintColor={COLORS.primary}
+                        />
+                    }
+                    ItemSeparatorComponent={() => <View style={styles.separator} />}
+                    ListEmptyComponent={() => (
+                        <View style={styles.vacio}>
+                            <MaterialCommunityIcons name="file-document-outline" size={72} color="#D1D5DB" />
+                            <Text style={styles.vacioTitulo}>
+                                {busqueda ? 'Sin resultados' : 'No tienes informes aún'}
+                            </Text>
+                            {!busqueda && (
+                                <TouchableOpacity
+                                    style={styles.btnCrear}
+                                    onPress={() => navigation.navigate(ROUTES.CREAR_INFORME)}
+                                >
+                                    <Text style={styles.btnCrearTexto}>Crear mi primer informe</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
+                />
+            )}
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f3f4f6' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-            padding: 20, paddingTop: 40, backgroundColor: 'white',
-            borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  titulo: { fontSize: 20, fontWeight: 'bold', color: '#1A1A2E' },
-  card: { backgroundColor: 'white', padding: 16, borderRadius: 12,
-          marginBottom: 12, elevation: 2,
-          shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.06, shadowRadius: 3 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  cardTitulo: { fontSize: 16, fontWeight: 'bold', color: '#1F2937', flex: 1 },
-  cardResumen: { fontSize: 13, color: '#4B5563', marginBottom: 12, lineHeight: 18 },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 8 },
-  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
-  cardFecha: { fontSize: 11, color: '#9CA3AF' },
-  vacio: { alignItems: 'center', marginTop: 80, gap: 12 },
-  vacioTexto: { fontSize: 16, color: '#9CA3AF' },
-  btnCrear: { backgroundColor: '#2456ee', paddingVertical: 12, paddingHorizontal: 24,
-              borderRadius: 10, marginTop: 8 },
-  btnCrearTexto: { color: 'white', fontWeight: 'bold', fontSize: 15 },
+    safeArea: { flex: 1, backgroundColor: COLORS.background },
+
+    header: {
+        flexDirection: 'row', justifyContent: 'space-between',
+        alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, marginBottom: 8,
+    },
+    logoWrapper: {
+        width: 46, height: 46, borderRadius: 23, overflow: 'hidden',
+        borderWidth: 2, borderColor: COLORS.primary,
+        alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface,
+    },
+
+    titleRow: {
+        flexDirection: 'row', justifyContent: 'space-between',
+        alignItems: 'center', paddingHorizontal: 20, marginBottom: 16,
+    },
+    pageTitle: { fontSize: 22, fontWeight: 'bold', color: COLORS.textDark },
+    addBtn:    { backgroundColor: COLORS.primary, borderRadius: 12, padding: 10 },
+
+    searchBar: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: COLORS.surface, borderRadius: 12,
+        borderWidth: 1.5, borderColor: '#E5E7EB',
+        paddingHorizontal: 14, height: 50,
+        marginHorizontal: 20, marginBottom: 8,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04, shadowRadius: 3, elevation: 1,
+    },
+    searchInput: { flex: 1, fontSize: 15, color: COLORS.textDark },
+
+    list:      { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 30 },
+    separator: { height: 8 },
+
+    row: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: COLORS.surface,
+        paddingVertical: 12, paddingHorizontal: 14,
+        borderRadius: 12,
+    },
+    rowIcon:    { marginRight: 12 },
+    rowContent: { flex: 1 },
+    rowTitle:   { fontSize: 14, fontWeight: '600', color: COLORS.textDark },
+    rowDate:    { fontSize: 12, color: COLORS.textMuted, marginTop: 3 },
+    actionBtn:  { padding: 8 },
+
+    vacio:         { alignItems: 'center', marginTop: 80, gap: 12 },
+    vacioTitulo:   { fontSize: 16, color: COLORS.textMuted, fontWeight: '500' },
+    btnCrear:      { backgroundColor: COLORS.primary, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10, marginTop: 8 },
+    btnCrearTexto: { color: 'white', fontWeight: 'bold', fontSize: 15 },
 });

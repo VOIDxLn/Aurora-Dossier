@@ -6,11 +6,13 @@ import { useEffect, useRef } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { authService } from '../../services/authService';
-import { useUser } from '../../context/UserContext';
+import { useUser }     from '../../context/UserContext';
+import { COLORS }      from '../../constants/colors';
+import { ROUTES }      from '../../constants/routes';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.75;
-const BTN_W = 40;
+const BTN_W        = 40;
 
 const ROL_LABEL = {
     admin:      'Administrador',
@@ -19,10 +21,10 @@ const ROL_LABEL = {
 };
 
 const MENU_ITEMS = [
-    { label: 'Home',          icon: 'home-outline',   route: 'Home'         },
-    { label: 'Editar datos',  icon: 'pencil-outline', route: 'EditarDatos'  },
-    { label: 'Subscripcion',  icon: 'star-outline',   route: 'Suscripcion'  },
-    { label: 'Configuracion', icon: 'cog-outline',    route: 'Configuracion'},
+    { label: 'Home',          icon: 'home-outline',   route: ROUTES.HOME          },
+    { label: 'Editar datos',  icon: 'pencil-outline', route: ROUTES.EDITAR_DATOS  },
+    { label: 'Subscripcion',  icon: 'star-outline',   route: ROUTES.SUSCRIPCION   },
+    { label: 'Configuracion', icon: 'cog-outline',    route: ROUTES.CONFIGURACION },
 ];
 
 export default function DrawerMenu({ visible, onClose, navigation }) {
@@ -33,19 +35,14 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
         if (visible) {
             slideAnim.setValue(-(DRAWER_WIDTH + BTN_W));
             Animated.spring(slideAnim, {
-                toValue: 0,
-                tension: 80,
-                friction: 12,
-                useNativeDriver: true,
+                toValue: 0, tension: 80, friction: 12, useNativeDriver: true,
             }).start();
         }
     }, [visible]);
 
     const handleClose = () => {
         Animated.timing(slideAnim, {
-            toValue: -(DRAWER_WIDTH + BTN_W),
-            duration: 220,
-            useNativeDriver: true,
+            toValue: -(DRAWER_WIDTH + BTN_W), duration: 220, useNativeDriver: true,
         }).start(() => onClose());
     };
 
@@ -57,7 +54,7 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
     const handleLogout = async () => {
         handleClose();
         await authService.logout();
-        setTimeout(() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }), 240);
+        setTimeout(() => navigation.reset({ index: 0, routes: [{ name: ROUTES.LOGIN }] }), 240);
     };
 
     const nombre   = userData?.nombre ?? 'Usuario';
@@ -67,52 +64,43 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
     return (
         <Modal transparent visible={visible} onRequestClose={handleClose} animationType="none">
             <View style={styles.overlay}>
-                {/* Overlay oscuro de fondo */}
                 <TouchableOpacity
                     style={StyleSheet.absoluteFillObject}
                     onPress={handleClose}
                     activeOpacity={1}
                 />
-
-                {/* Panel */}
                 <Animated.View style={[styles.drawer, { transform: [{ translateX: slideAnim }] }]}>
                     <View style={styles.drawerContent}>
-                        {/* Cabecera */}
                         <View style={styles.drawerHeader}>
-                            <MaterialCommunityIcons name="account-circle" size={80} color="#2456ee" />
-                            <Text style={styles.userName} numberOfLines={2}>{nombre}</Text>
+                            <MaterialCommunityIcons name="account-circle" size={80} color={COLORS.primary} />
+                            <Text style={styles.userName}  numberOfLines={2}>{nombre}</Text>
                             <View style={styles.rolBadge}>
                                 <Text style={styles.rolText}>{rolLabel}</Text>
                             </View>
                             <Text style={styles.userEmail} numberOfLines={1}>{email}</Text>
                         </View>
 
-                        {/* Opciones */}
                         <View style={styles.menuList}>
                             {MENU_ITEMS.map((item, i) => (
                                 <TouchableOpacity
                                     key={i}
-                                    style={[
-                                        styles.menuItem,
-                                        i < MENU_ITEMS.length - 1 && styles.menuItemDivider,
-                                    ]}
+                                    style={[styles.menuItem, i < MENU_ITEMS.length - 1 && styles.menuItemDivider]}
                                     onPress={() => handleNavigate(item.route)}
                                 >
-                                    <MaterialCommunityIcons name={item.icon} size={24} color="#2456ee" />
+                                    <MaterialCommunityIcons name={item.icon} size={24} color={COLORS.primary} />
                                     <Text style={styles.menuItemText}>{item.label}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
 
-                        {/* Cerrar sesión */}
                         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                            <MaterialCommunityIcons name="exit-to-app" size={24} color="#EF5350" />
+                            <MaterialCommunityIcons name="exit-to-app" size={24} color={COLORS.danger} />
                             <Text style={styles.logoutText}>Cerrar sesión</Text>
                         </TouchableOpacity>
                     </View>
-                    {/* Botón "<" lateral */}
+
                     <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
-                        <MaterialCommunityIcons name="chevron-left" size={22} color="#5b5b5b" />
+                        <MaterialCommunityIcons name="chevron-left" size={22} color={COLORS.textLight} />
                     </TouchableOpacity>
                 </Animated.View>
             </View>
@@ -121,50 +109,31 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
 }
 
 const styles = StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
-    drawer:  {
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: DRAWER_WIDTH + BTN_W,
-        flexDirection: 'row',
-    },
-
-    drawerContent: { width: DRAWER_WIDTH, backgroundColor: '#fff' },
+    overlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+    drawer:        { position: 'absolute', left: 0, top: 0, bottom: 0, width: DRAWER_WIDTH + BTN_W, flexDirection: 'row' },
+    drawerContent: { width: DRAWER_WIDTH, backgroundColor: COLORS.surface },
 
     drawerHeader: {
-        backgroundColor: '#f3f4f6',
-        paddingVertical: 28, paddingHorizontal: 20,
-        alignItems: 'center',
-        borderBottomWidth: 2, borderBottomColor: '#2456ee',
+        backgroundColor: COLORS.background, paddingVertical: 28, paddingHorizontal: 20,
+        alignItems: 'center', borderBottomWidth: 2, borderBottomColor: COLORS.primary,
     },
-    userName:  { fontSize: 16, fontWeight: 'bold', color: '#1A1A2E', marginTop: 8, textAlign: 'center' },
-    userEmail: { fontSize: 11, color: '#9CA3AF', marginTop: 4, textAlign: 'center' },
-    rolBadge:  { backgroundColor: '#EFF6FF', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 3, marginTop: 6 },
-    rolText:   { fontSize: 12, color: '#2456ee', fontWeight: '600' },
+    userName:  { fontSize: 16, fontWeight: 'bold', color: COLORS.textDark, marginTop: 8, textAlign: 'center' },
+    userEmail: { fontSize: 11, color: COLORS.textMuted, marginTop: 4, textAlign: 'center' },
+    rolBadge:  { backgroundColor: COLORS.primaryLight, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 3, marginTop: 6 },
+    rolText:   { fontSize: 12, color: COLORS.primary, fontWeight: '600' },
 
-    menuList: { flex: 1, paddingTop: 6 },
-    menuItem: {
-        flexDirection: 'row', alignItems: 'center',
-        gap: 14, paddingVertical: 15, paddingHorizontal: 20,
-    },
-    menuItemDivider: { borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-    menuItemText:    { fontSize: 15, color: '#5b5b5b' },
+    menuList:        { flex: 1, paddingTop: 6 },
+    menuItem:        { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 20 },
+    menuItemDivider: { borderBottomWidth: 1, borderBottomColor: COLORS.borderLight },
+    menuItemText:    { fontSize: 15, color: COLORS.textLight },
 
-    logoutBtn: {
-        flexDirection: 'row', alignItems: 'center',
-        gap: 14, paddingVertical: 18, paddingHorizontal: 20,
-        borderTopWidth: 1, borderTopColor: '#F3F4F6',
-    },
-    logoutText: { fontSize: 15, color: '#EF5350' },
+    logoutBtn:  { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 18, paddingHorizontal: 20, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
+    logoutText: { fontSize: 15, color: COLORS.danger },
 
     closeBtn: {
-        width: BTN_W, alignSelf: 'center',
-        backgroundColor: '#fff',
+        width: BTN_W, alignSelf: 'center', backgroundColor: COLORS.surface,
         borderTopRightRadius: 10, borderBottomRightRadius: 10,
         paddingVertical: 20, alignItems: 'center', justifyContent: 'center',
-        shadowColor: '#000', shadowOffset: { width: 2, height: 0 },
-        shadowOpacity: 0.1, shadowRadius: 4, elevation: 4,
+        shadowColor: '#000', shadowOffset: { width: 2, height: 0 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4,
     },
 });
