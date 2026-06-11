@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, ActivityIndicator, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, TextInput, Modal, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
-import { novedadesService } from '../../lib/novedadesService';
+import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
+import { novedadesService } from '../../services/novedadesService';
 
 export default function NovedadesScreen({ navigation }) {
     const [lista, setLista] = useState([]);
@@ -27,22 +29,37 @@ export default function NovedadesScreen({ navigation }) {
 
     useEffect(() => {
         const init = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = await authService.getUser();
             if (!user) { setCargando(false); return; }
             setUserId(user.id);
 
-            const { data: perfil } = await supabase
-                .from('profiles')
-                .select('rol, empresa_id')
-                .eq('id', user.id)
-                .single();
+            // Intentar obtener de profiles (para administradores)
+            const { data: perfil } = await userService.fetchProfileByUid(user.id);
 
-            setRol(perfil.rol);
-            setEmpresaId(perfil.empresa_id);
+            let userRol = perfil?.rol;
+            let userEmpresaId = perfil?.empresa_id;
 
-            const idEmpresa = perfil.empresa_id || ID_EMPRESA_PRUEBA;
+            // Si no se encuentra en profiles (o no tiene rol allí), buscar en empleados (para empleados)
+            if (!perfil || !perfil.rol) {
+                const { data: empleado } = await userService.fetchEmpleadoByUid(user.id);
 
-            if (perfil.rol === 'admin') {
+                if (empleado) {
+                    userRol = empleado.rol;
+                    userEmpresaId = empleado.empresa_id;
+                }
+            }
+
+            // Fallback en caso de que no se encuentre información
+            if (!userRol) {
+                userRol = 'empleado';
+            }
+
+            setRol(userRol);
+            setEmpresaId(userEmpresaId || ID_EMPRESA_PRUEBA);
+
+            const idEmpresa = userEmpresaId || ID_EMPRESA_PRUEBA;
+
+            if (userRol === 'admin') {
                 await cargarDatos(idEmpresa);
             } else {
                 await Promise.all([
@@ -65,22 +82,22 @@ export default function NovedadesScreen({ navigation }) {
     const cargarPendientes = async (uid, idEmpresa) => {
         const empId = idEmpresa || empresaId || ID_EMPRESA_PRUEBA;
         const uId = uid || userId;
-        const [{ data: todasNovedades }, { data: vistas }] = await Promise.all([
-            supabase.from('novedades').select('*').eq('empresa_id', empId).order('created_at', { ascending: false }),
-            supabase.from('novedades_vistas').select('novedad_id').eq('empleado_id', uId).eq('completada', true),
-        ]);
-        const idsCompletadas = new Set((vistas || []).map(v => v.novedad_id));
-        setListaPendientes((todasNovedades || []).filter(n => !idsCompletadas.has(n.id)));
+        try {
+            const pendientes = await novedadesService.obtenerPendientes(uId, empId);
+            setListaPendientes(pendientes);
+        } catch {
+            Alert.alert('Error', 'No se pudieron cargar las novedades pendientes.');
+        }
     };
 
     const cargarCompletadas = async (uid) => {
         const uId = uid || userId;
-        const { data } = await supabase
-            .from('novedades_vistas')
-            .select('novedad_id, vista_at, novedades(*)')
-            .eq('empleado_id', uId)
-            .eq('completada', true);
-        setListaCompletadas((data || []).map(v => ({ ...v.novedades, vista_at: v.vista_at })));
+        try {
+            const completadas = await novedadesService.obtenerCompletadas(uId);
+            setListaCompletadas(completadas);
+        } catch {
+            Alert.alert('Error', 'No se pudieron cargar las novedades completadas.');
+        }
     };
 
     const handlePublicar = async () => {
@@ -114,12 +131,11 @@ export default function NovedadesScreen({ navigation }) {
     };
 
     const cargarVistasDeNovedad = async (novedadId) => {
-        const { data } = await supabase
-            .from('novedades_vistas')
-            .select('empleado_id, vista_at, profiles(nombre, email)')
-            .eq('novedad_id', novedadId)
-            .eq('completada', true);
-        return data || [];
+        try {
+            return await novedadesService.obtenerVistasNovedad(novedadId);
+        } catch {
+            return [];
+        }
     };
 
     const handleExpandir = async (novedadId) => {
@@ -135,15 +151,12 @@ export default function NovedadesScreen({ navigation }) {
     };
 
     const handleMarcarVisto = async (novedadId) => {
-        await supabase
-            .from('novedades_vistas')
-            .upsert({
-                novedad_id: novedadId,
-                empleado_id: userId,
-                completada: true,
-                vista_at: new Date().toISOString(),
-            }, { onConflict: 'novedad_id,empleado_id' });
-        setListaPendientes(prev => prev.filter(n => n.id !== novedadId));
+        try {
+            await novedadesService.marcarComoVisto(novedadId, userId);
+            setListaPendientes(prev => prev.filter(n => n.id !== novedadId));
+        } catch {
+            Alert.alert('Error', 'No se pudo marcar la novedad como vista.');
+        }
     };
 
     // ── Cargando / detectando rol ────────────────────────────────────────────

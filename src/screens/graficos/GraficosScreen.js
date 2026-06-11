@@ -4,6 +4,8 @@ import {
     ActivityIndicator, Dimensions, TouchableOpacity,
 } from 'react-native';
 import { BarChart, PieChart } from 'react-native-chart-kit';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';

@@ -1,14 +1,14 @@
-import { View, Text, Animated } from 'react-native'
+import { View, Text } from 'react-native'
 
-export default function MessageList({ deleteTitle, translateTittle }) {
+export default function WelcomeHeader({ deleteTitle }) {
 
     return (
         <>
-            {deleteTitle && (<Animated.View style={{ marginTop: 200, transform: [{ translateY: translateTittle }] }}>
-                <View style={{ width: '80%' }}>
-                    <Text style={styles.tittle}>Que informe haremos hoy?</Text>
+            {deleteTitle && (
+                <View style={{ marginTop: 120, width: '80%' }}>
+                    <Text style={styles.tittle}>Para empezar, dame un titulo para este informe</Text>
                 </View>
-            </Animated.View>)}
+            )}
         </>
     )
 }

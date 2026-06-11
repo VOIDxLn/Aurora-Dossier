@@ -1,6 +1,6 @@
 import { TouchableOpacity, StyleSheet, ScrollView, View, Text } from 'react-native';
 
-export default function MessageList({ createChat, bubbleMessage, generatePdf, onDateSelect }) {
+export default function MessageList({ createChat, bubbleMessage, generatePdf, deleteLoadingMessage, setDeleteLoadingMessage, onDateSelect }) {
 
     return (
         <>
@@ -18,7 +18,8 @@ export default function MessageList({ createChat, bubbleMessage, generatePdf, on
                                     backgroundColor: message.author === 'user' ? '#6cb1ff' : '#DFDFDF'
                                 }}
                             >
-                                <Text>{message.value}</Text>
+                                {typeof message.value === 'string' ? 
+                                <Text>{message.value}</Text> : message.value}
 
                                 {message.isPicker && (
                                     <View>

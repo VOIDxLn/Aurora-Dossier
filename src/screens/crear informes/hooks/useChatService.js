@@ -5,12 +5,14 @@ import { supabase } from '../../../lib/supabase';
 import { readFileFormatAI } from '../UploadFiles/hooks/readFileFormatAI';
 import { useGeneratedFileIa } from '../GeneratedFile/useGeneratedFileIa';
 
+import LottieView from 'lottie-react-native';
+
 const PREGUNTAS = [
-    { campo: 'titulo',       pregunta: 'Para comenzar, dame un titulo para este informe.' },
-    { campo: 'actividad',    pregunta: 'Describe brevemente la actividad o evento a documentar.' },
-    { campo: 'responsable',  pregunta: 'Quien realizo la actividad? (nombre o cargo)' },
-    { campo: 'fecha',        pregunta: 'Selecciona la fecha del evento:', esFecha: true },
-    { campo: 'detalles',     pregunta: 'Agrega los detalles, observaciones o resultados importantes.' },
+    { campo: 'titulo',      pregunta: 'Para comenzar, dame un titulo para este informe.' },
+    { campo: 'actividad',   pregunta: 'Describe brevemente la actividad o evento a documentar.' },
+    { campo: 'responsable', pregunta: 'Quien realizo la actividad? (nombre o cargo)' },
+    { campo: 'fecha',       pregunta: 'Selecciona la fecha del evento:', esFecha: true },
+    { campo: 'detalles',    pregunta: 'Agrega los detalles, observaciones o resultados importantes.' },
 ];
 
 const CAMPOS = ['titulo', 'actividad', 'responsable', 'fecha', 'detalles'];
@@ -27,7 +29,6 @@ export function useChatService() {
     const [lastAiResponse, setLastAiResponse] = useState('');
     const [userId, setUserId] = useState(null);
 
-    const [etapa, setEtapa] = useState('inicio');
     const [etapaIndex, setEtapaIndex] = useState(0);
     const [datosInforme, setDatosInforme] = useState({
         titulo: '',
@@ -38,9 +39,10 @@ export function useChatService() {
     });
 
     const [pront, setPront] = useState('');
-    const [bubbleMessage, setBubbleMessage] = useState([{ value: '' }]);
+    const [bubbleMessage, setBubbleMessage] = useState([]);
     const [deleteTitle, setDeleteTitle] = useState(true);
     const [createChat, setCreateChat] = useState(false);
+    const [deleteLoadingMessage, setDeleteLoadingMessage] = useState(false);
 
     useEffect(() => {
         const getUser = async () => {
@@ -49,32 +51,47 @@ export function useChatService() {
         };
         getUser();
 
-        setBubbleMessage([{
-            author: 'ai',
-            value: PREGUNTAS[0].pregunta,
-            isPdfReport: false,
-        }]);
-        setDeleteTitle(false);
+        setBubbleMessage([]);
         setCreateChat(true);
     }, []);
+
+    const loadingMessage = (
+        <LottieView
+            source={require('../../../../assets/loading-message.json')}
+            autoPlay
+            loop
+            style={{
+                width: 40,
+                height: 20,
+                transform: [{ scale: 3 }],
+            }}
+            renderMode=""
+        />
+    );
 
     const send = async (fileInfo, setFileInfo) => {
         if (pront.trim() === '' && !fileInfo) return;
 
         if (fileInfo) {
             const currentPront = pront;
-            setBubbleMessage(prev => [...prev, { author: 'user', value: currentPront }]);
+            setBubbleMessage(prev => [
+                ...prev,
+                { author: 'user', value: currentPront },
+                { author: 'ai', value: loadingMessage },
+            ]);
             setPront('');
             if (setFileInfo) setFileInfo(null);
 
             try {
-                console.log('📤 Enviando archivo a Aurora AI...');
                 const formattedMessage = readFileFormatAI(currentPront, fileInfo);
                 let answer = await auroraIA.invoke(formattedMessage);
                 let aiMessage = answer.content;
 
                 setLastAiResponse(aiMessage);
-                setBubbleMessage(prev => [...prev, { author: 'ai', value: aiMessage, isPdfReport: true }]);
+                setBubbleMessage(prev => {
+                    const sinLoading = prev.slice(0, -1);
+                    return [...sinLoading, { author: 'ai', value: aiMessage, isPdfReport: true }];
+                });
 
                 const { data: { user } } = await supabase.auth.getUser();
                 const currentUserId = user?.id || userId;
@@ -90,6 +107,14 @@ export function useChatService() {
                 await generatePdf(aiMessage, currentUserId);
             } catch (err) {
                 console.log('Error en la respuesta de Aurora AI', err);
+                setBubbleMessage(prev => {
+                    const sinLoading = prev.slice(0, -1);
+                    return [...sinLoading, {
+                        author: 'ai',
+                        value: 'Ocurrio un error. Intenta de nuevo.',
+                        isPdfReport: false,
+                    }];
+                });
             }
             return;
         }
@@ -97,7 +122,12 @@ export function useChatService() {
         const respuestaUsuario = pront.trim();
         const campoActual = CAMPOS[etapaIndex];
 
-        setBubbleMessage(prev => [...prev, { author: 'user', value: respuestaUsuario }]);
+        setBubbleMessage(prev => [
+            ...prev,
+            { author: 'user', value: respuestaUsuario },
+            { author: 'ai', value: loadingMessage },
+        ]);
+
         setPront('');
         setDeleteTitle(false);
         setCreateChat(true);
@@ -111,19 +141,27 @@ export function useChatService() {
             setEtapaIndex(siguienteIndex);
             setTimeout(() => {
                 const esFecha = CAMPOS[siguienteIndex] === 'fecha';
-                setBubbleMessage(prev => [...prev, {
-                    author: 'ai',
-                    value: PREGUNTAS[siguienteIndex].pregunta,
-                    isPdfReport: false,
-                    isPicker: esFecha,
-                }]);
+                setBubbleMessage(prev => {
+                    const sinLoading = prev.slice(0, -1);
+                    return [...sinLoading, {
+                        author: 'ai',
+                        value: PREGUNTAS[siguienteIndex].pregunta,
+                        isPdfReport: false,
+                        isPicker: esFecha,
+                    }];
+                });
             }, 500);
         } else {
-            setBubbleMessage(prev => [...prev, {
-                author: 'ai',
-                value: 'Generando tu informe...',
-                isPdfReport: false,
-            }]);
+            setTimeout(() => {
+                setBubbleMessage(prev => {
+                    const sinLoading = prev.slice(0, -1);
+                    return [...sinLoading, {
+                        author: 'ai',
+                        value: 'Generando tu informe...',
+                        isPdfReport: false,
+                    }];
+                });
+            }, 500);
 
             try {
                 const prompt = `Genera un informe profesional estructurado con esta informacion.
@@ -196,6 +234,8 @@ Comienza directamente con el encabezado del informe sin ningun texto previo.`;
         deleteTitle,
         createChat,
         lastAiResponse,
+        deleteLoadingMessage,
+        setDeleteLoadingMessage,
         setPront,
         send,
         seleccionarFecha,

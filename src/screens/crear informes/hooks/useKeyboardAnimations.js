@@ -16,7 +16,7 @@ export function useKeyboardAnimations() {
                 useNativeDriver: true,
             }).start();
             Animated.timing(translateInput, {
-                toValue: height,
+                toValue: -height,
                 duration: 250,
                 useNativeDriver: true,
             }).start();

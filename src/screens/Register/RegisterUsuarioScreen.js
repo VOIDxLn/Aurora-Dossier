@@ -11,7 +11,8 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { supabase } from '../../lib/supabase';
+import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 
 import Logo from '../../components/Logo';
 import TextInputs from '../auth/components/TextInputs';
@@ -43,35 +44,26 @@ export default function RegisterUsuarioScreen({ navigation, route }) {
 
     try {
       // Paso 1 — Crear usuario en Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: correo,
-        password: contrasena,
-      });
+      const { data: authData, error: authError } = await authService.signUp(correo, contrasena);
 
       if (authError) throw authError;
 
       // Paso 2 — Guardar empresa en la tabla 'empresas'
-      const { data: empresaData, error: empresaError } = await supabase
-        .from('empresas')
-        .insert([{
-          nit: nit,
-          razon_social: razonSocial,
-          domicilio_fiscal: domicilio,
-          correo: correo,
-        }])
-        .select()
-        .single();
+      const { data: empresaData, error: empresaError } = await userService.createEmpresa(
+        nit,
+        razonSocial,
+        domicilio,
+        correo
+      );
 
       if (empresaError) throw empresaError;
 
       // Paso 3 — Actualizar el perfil con empresa_id y rol
-      const { error: perfilError } = await supabase
-        .from('profiles')
-        .update({
-          empresa_id: empresaData.id,
-          rol: 'admin',
-        })
-        .eq('id', authData.user.id);
+      const { error: perfilError } = await userService.updateProfileEmpresaAndRole(
+        authData.user.id,
+        empresaData.id,
+        'admin'
+      );
 
       if (perfilError) throw perfilError;
 

@@ -5,7 +5,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { supabase } from '../../lib/supabase';
+import { authService } from '../../services/authService';
 import { useUser } from '../../context/UserContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -56,7 +56,7 @@ export default function DrawerMenu({ visible, onClose, navigation }) {
 
     const handleLogout = async () => {
         handleClose();
-        await supabase.auth.signOut();
+        await authService.logout();
         setTimeout(() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }), 240);
     };
 
