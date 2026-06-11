@@ -46,6 +46,7 @@ export const profileService = {
     linkEmpresaToUser: (userId, empresaId, rol) =>
         profileRepository.updateEmpresaAndRole(userId, empresaId, rol),
 
-    ensureProfile: (userId, empresaId, rol, email) =>
-        profileRepository.upsertProfile(userId, empresaId, rol, email),
+    async ensureProfile(userId, empresaId, rol, email) {
+        return profileRepository.upsertProfile(userId, empresaId, rol, email);
+    },
 };
