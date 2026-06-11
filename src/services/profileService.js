@@ -12,6 +12,7 @@ export const profileService = {
                 rol:      'admin',
                 permisos: null,
                 activo:   true,
+                empresa_id: perfil?.empresa_id ?? null,
             };
         }
 
@@ -23,6 +24,7 @@ export const profileService = {
             rol:      'admin',
             permisos: null,
             activo:   true,
+            empresa_id: perfil.empresa_id,
         };
     },
 
