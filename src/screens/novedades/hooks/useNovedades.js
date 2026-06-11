@@ -129,11 +129,13 @@ export function useNovedades() {
     };
 
     const handleMarcarVisto = async (novedadId) => {
-        try {
-            await novedadesService.marcarComoVisto(novedadId, authUserId);
-            setListaPendientes(prev => prev.filter(n => n.id !== novedadId));
-        } catch {
-            Alert.alert('Error', 'No se pudo marcar la novedad como vista.');
+        // Quitamos de la lista localmente de inmediato (UX optimista)
+        setListaPendientes(prev => prev.filter(n => n.id !== novedadId));
+        // Persistimos en BD — si falla (ej: empleado sin auth_uid en tabla empleados),
+        // el error se loguea pero no interrumpe al usuario
+        if (authUserId) {
+            novedadesService.marcarComoVisto(novedadId, authUserId)
+                .catch(e => console.warn('useNovedades.handleMarcarVisto:', e.message));
         }
     };
 
