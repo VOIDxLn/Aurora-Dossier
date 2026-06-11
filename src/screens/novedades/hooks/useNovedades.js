@@ -129,8 +129,12 @@ export function useNovedades() {
     };
 
     const handleMarcarVisto = async (novedadId) => {
-        // Quitamos de la lista localmente de inmediato (UX optimista)
-        setListaPendientes(prev => prev.filter(n => n.id !== novedadId));
+        const markedItem = listaPendientes.find(n => n.id === novedadId);
+        if (markedItem) {
+            // Mover localmente de inmediato (UX optimista)
+            setListaPendientes(prev => prev.filter(n => n.id !== novedadId));
+            setListaCompletadas(prev => [{ ...markedItem, vista_at: new Date().toISOString() }, ...prev]);
+        }
         // Persistimos en BD — si falla (ej: empleado sin auth_uid en tabla empleados),
         // el error se loguea pero no interrumpe al usuario
         if (authUserId) {
