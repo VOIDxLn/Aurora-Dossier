@@ -32,7 +32,7 @@ export function UserProvider({ children }) {
                 if (empleado.empresa_id) {
                     // Fire-and-forget: el perfil estará listo antes de que el usuario
                     // termine de responder las preguntas del informe.
-                    profileService.ensureProfile(user.id, empleado.empresa_id, empleado.rol, empleado.email)
+                    profileService.ensureProfile(user.id, empleado.empresa_id, empleado.rol, empleado.email, empleado.nombre)
                         .catch(e => console.warn('ensureProfile:', e.message));
                 }
             } else {

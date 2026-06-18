@@ -1,4 +1,5 @@
 import { novedadRepository } from '../repositories/novedadRepository';
+import { empleadoRepository } from '../repositories/empleadoRepository';
 
 export const novedadesService = {
     async obtenerNovedades(empresaId) {
@@ -41,9 +42,35 @@ export const novedadesService = {
     },
 
     async obtenerVistasNovedad(novedadId) {
-        const { data, error } = await novedadRepository.findViewsByNovedad(novedadId);
+        const [{ data: vistas, error }, { data: empleados }] = await Promise.all([
+            novedadRepository.findViewsByNovedad(novedadId),
+            empleadoRepository.findAllForMapping()
+        ]);
         if (error) throw error;
-        return data ?? [];
+        if (!vistas) return [];
+
+        const empMap = {};
+        if (empleados) {
+            empleados.forEach(emp => {
+                if (emp.auth_uid) empMap[emp.auth_uid] = emp.nombre;
+            });
+        }
+
+        return vistas.map(v => {
+            const realName = empMap[v.empleado_id];
+            const profileNombre = v.profiles?.nombre;
+            const finalNombre = (profileNombre === 'Sin nombre' || !profileNombre) && realName
+                ? realName
+                : (profileNombre || v.profiles?.email || 'Empleado');
+
+            return {
+                ...v,
+                profiles: v.profiles ? {
+                    ...v.profiles,
+                    nombre: finalNombre
+                } : null
+            };
+        });
     },
 };
 

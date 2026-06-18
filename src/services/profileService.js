@@ -12,6 +12,7 @@ export const profileService = {
                 rol:      'admin',
                 permisos: null,
                 activo:   true,
+                empresa_id: perfil?.empresa_id ?? null,
             };
         }
 
@@ -23,6 +24,7 @@ export const profileService = {
             rol:      'admin',
             permisos: null,
             activo:   true,
+            empresa_id: perfil.empresa_id,
         };
     },
 
@@ -46,6 +48,7 @@ export const profileService = {
     linkEmpresaToUser: (userId, empresaId, rol) =>
         profileRepository.updateEmpresaAndRole(userId, empresaId, rol),
 
-    ensureProfile: (userId, empresaId, rol, email) =>
-        profileRepository.upsertProfile(userId, empresaId, rol, email),
+    async ensureProfile(userId, empresaId, rol, email, nombre = null) {
+        return profileRepository.upsertProfile(userId, empresaId, rol, email, nombre);
+    },
 };

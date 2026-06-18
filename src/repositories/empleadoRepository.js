@@ -7,6 +7,9 @@ export const empleadoRepository = {
     findByEmail: (email) =>
         supabase.from('empleados').select('*').eq('email', email).maybeSingle(),
 
+    findAllForMapping: () =>
+        supabase.from('empleados').select('auth_uid, nombre'),
+
     findAllByEmpresa: (empresaId) =>
         supabase
             .from('empleados')
